@@ -1,33 +1,78 @@
 import gymnasium as gym
+from enum import Enum
 
-# GLOBAL VARS
-RENDER_MODE = "human" # or rgb_array
-VIDEO = True # Only works with render_mode: rgb_array
+class obs_space(Enum):
+    """
+    The observation spaces available through Gymnasium
+    """
+    RGB = "rgb"
+    GRAY = "grayscale"
+    RAM = "ram"
+    TILE = "tile" # our own custom representation of the othello board state
 
-if VIDEO:
-    tmp_env = gym.make("ALE/Othello-v5", render_mode="rgb_array")
+class render_mode(Enum):
+    H = "human"
+    R = "rgb_array"
 
-    # wrap the env in the record video
-    env = gym.wrappers.RecordVideo(env=tmp_env, video_folder="./recordings", name_prefix="test-video", episode_trigger=lambda x: x % 2 == 0)
-else:
-    env = gym.make("ALE/Othello-v5", render_mode=RENDER_MODE)
+class actions(Enum):
+    """
+    The action space of Gymnasium's Othello environment
+    """
+    NOOP = 0
+    PLACE = 1 # Fire in documentation
+    UP = 2
+    RIGHT = 3
+    LEFT = 4
+    DOWN = 5
+    UPRIGHT = 6
+    UPLEFT = 7
+    DOWNRIGHT = 8
+    DOWNLEFT = 9
 
-# env reset for a fresh start
-observation, info = env.reset()
+class Othello():
+    """
+    The Gymnasium Atari Game Othello Environment
+    """
+    def __init__(self, render_mode, video):
+        self.RENDER_MODE = render_mode
+        self.VIDEO = video 
+        self.env = self.setup_env()
 
-if VIDEO:
-    env.start_video_recorder()
+
+    def setup_env(self):
+        """
+        Construct and return the Gymnasium Atari Environment for Othello
+        """
+        if self.VIDEO:
+            tmp_env = gym.make("ALE/Othello-v5", render_mode=render_mode.R.value)
+
+            # wrap the env in the record video
+            env = gym.wrappers.RecordVideo(env=tmp_env, video_folder="./recordings", name_prefix="test-video", episode_trigger=lambda x: x % 2 == 0)
+        else:
+            env = gym.make("ALE/Othello-v5", render_mode=self.RENDER_MODE)
+        return env
 
 
-for _ in range(1000):
-    action = env.action_space.sample() 
-    observation, reward, terminated, truncated, info = env.step(action)
-    env.render()
+    def run(self):
+        # env reset for a fresh start
+        observation, info = self.env.reset()
 
-    if terminated or truncated:
-        observation, info = env.reset()
+        if self.VIDEO:
+            self.env.start_video_recorder()
 
-if VIDEO:
-    env.close_video_recorder()
 
-env.close()
+        for _ in range(1000):
+            print(f'actions: {self.env.action_space}')
+            print(f'actions sample: {self.env.action_space.sample()}')
+
+            action = self.env.action_space.sample() 
+            observation, reward, terminated, truncated, info = self.env.step(action)
+            self.env.render()
+
+            if terminated or truncated:
+                observation, info = self.env.reset()
+
+        if self.VIDEO:
+            self.env.close_video_recorder()
+
+        self.env.close()
