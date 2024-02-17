@@ -1,5 +1,8 @@
 import gymnasium as gym
 from enum import Enum
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 class obs_space(Enum):
     """
@@ -8,11 +11,10 @@ class obs_space(Enum):
     RGB = "rgb"
     GRAY = "grayscale"
     RAM = "ram"
-    TILE = "tile" # our own custom representation of the othello board state
 
 class render_mode(Enum):
-    H = "human"
-    R = "rgb_array"
+    HUMAN = "human"
+    RGB = "rgb_array"
 
 class actions(Enum):
     """
@@ -44,7 +46,7 @@ class Othello():
         Construct and return the Gymnasium Atari Environment for Othello
         """
         if self.VIDEO:
-            tmp_env = gym.make("ALE/Othello-v5", render_mode=render_mode.R.value)
+            tmp_env = gym.make("ALE/Othello-v5", render_mode=render_mode.RGB.value)
 
             # wrap the env in the record video
             env = gym.wrappers.RecordVideo(env=tmp_env, video_folder="./recordings", name_prefix="test-video", episode_trigger=lambda x: x % 2 == 0)
@@ -62,13 +64,12 @@ class Othello():
 
 
         for _ in range(1000):
-            print(f'actions: {self.env.action_space}')
-            print(f'actions sample: {self.env.action_space.sample()}')
-
             action = self.env.action_space.sample() 
             observation, reward, terminated, truncated, info = self.env.step(action)
             self.env.render()
 
+            # plt.imshow(observation)
+            # plt.show()
             if terminated or truncated:
                 observation, info = self.env.reset()
 
