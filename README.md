@@ -10,4 +10,4 @@ To get started:
    2. Create venv: `python -m venv venv`
    3. Activate venv: Run  `venv\Scripts\activate`
 3. Install the requirements: `python -m pip install -r requirements.txt`
-4. Run the script: `python -m othello`
+4. Run the script: `python -m main`

@@ -41,12 +41,11 @@ class NeuralNet(nn.Module):
         return Q
     
     
-
-
 class DQN(NeuralNet):
     def __init__(self, state_shape, num_actions, epsilon):
-        super().__init__(state_shape, num_actions, epsilon)
-
+        super().__init__(state_shape, num_actions)
+        self.epsilon = epsilon
+        
     def model(self):
         model = NeuralNet().to(self.device)
         print(model)
