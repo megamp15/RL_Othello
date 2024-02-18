@@ -4,7 +4,7 @@ from gymnasium.wrappers import ResizeObservation, FrameStack, RecordVideo
 from enum import Enum
 import numpy as np
 import matplotlib.pyplot as plt
-import DQN
+import Agents
 
 
 class Othello():
@@ -37,7 +37,7 @@ class Othello():
     def run(self):
         observation, info = self.ENV.reset()
         # obs = self.preprocess_obs(observation)
-        # DQN.DQN(obs.shape, 10, 0.5)
+        # DQN.DQN(self.ENV,obs.shape, 10, 0.5)
         if self.RECORD_VIDEO:
             self.ENV.start_video_recorder()
 
@@ -59,16 +59,21 @@ class Othello():
         """
         Crop the observation image to only look at the board. 
         """
-        # OBS_TYPE = RGB
-        if len(observation.shape) > 2: 
-            obs_cropped = observation[8:-7, 6:-8, :]
-        # OBS_TYPE = GRAY
-        else: 
-            obs_cropped = observation[8:-7, 6:-8]
-        # print(obs_cropped.shape) # 90 x 66 (x 3 if RGB)
-        # plt.imshow(obs_cropped)
-        # plt.show()
-        return obs_cropped
+        obs_frames = []
+        for frame in range(self.FRAME_STACK):
+            obs = observation[frame]
+            # OBS_TYPE = RGB
+            if len(obs.shape) > 2: 
+                obs_cropped = obs[8:-7, 6:-8, :]
+            # OBS_TYPE = GRAY
+            else: 
+                obs_cropped = obs[8:-7, 6:-8]
+            obs_frames.append(obs_cropped)
+        obs_frames = np.array(obs_frames)
+        print(obs_frames[0].shape) # 90 x 66 (x 3 if RGB)
+        plt.imshow(obs_frames[0])
+        plt.show()
+        return observation
 
 class obs_space(Enum):
     """
