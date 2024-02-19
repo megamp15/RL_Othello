@@ -5,10 +5,14 @@ import othello
 
 if __name__ == '__main__':
     """
-    RENDER_MODE = ["human" or "rgb_array"]
-    OBSERVATION_TYPE = ["RGB", "GRAY", "RAM"] # RAM needs a diff env so that will cause an error
-    FRAME_STACK = int : the number of frames to stack together when retrieving the observation from the env
-    VIDEO = Bool  Note: Only works with render_mode: rgb_array
+    RENDER_MODE = ["human" or "rgb_array"] Human mode makes you see the board where as RGB will just do it in the background
+    OBSERVATION_TYPE = ["RGB", "GRAY", "RAM"] # RGB for color image, and GRAY for grayscale. RAM needs a diff env so that will cause an error for rn
+    VIDEO = Bool  Note: Only works with render_mode: rgb_array. render_mode is hardcoded alread if this is True
     """
-    othello = othello.Othello(render_mode=othello.render_mode.HUMAN.value, observation_type=othello.obs_space.RGB.value, frame_stack=1, record_video=False)
-    othello.run()
+    othello = othello.Othello(render_mode=othello.render_mode.HUMAN.value, observation_type=othello.obs_space.RGB.value, record_video=False)
+
+    # Uncomment the following to run just the base othello 
+    # othello.run()
+
+    # To run a test of the DQN algorithm based on the evaluate method: https://www.kaggle.com/code/pedrobarrios/proyecto2-yandexdataschool-week4-rlataribreakout
+    othello.run_DQN()
