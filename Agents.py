@@ -10,7 +10,7 @@ class NeuralNet(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         self.input_dim = input_dim
-        self.channel, self.height, self.width = self.input_dim
+        self.batch_size, self.channel, self.height, self.width = self.input_dim
         self.output_dim = output_dim
         print(f"input_dim: {input_dim}, output_dim: {output_dim}")
         self.device = self.device()
@@ -54,37 +54,11 @@ class NeuralNet(nn.Module):
     def get_conv_out_size(self, conv, image_dim):
         return np.prod(conv(torch.rand(*image_dim)).data.shape)
 
-    # def forward(self, state):
-    #     print("forward")
-    #     Q = self.network(state)
-    #     assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
-    #     return Q
-
     def forward(self, state):
-        # print("Input shape:", state.shape)
-        
-        # Pass through convolutional layers
-        state = self.network[:6](state)
-        # print("After convolutional layers shape:", state.shape)
-        
-        #TODO: # I'm not sure why but the nn.Flatten() causes an error between the conv layer and the FC layer
-        # The error is in matrix mult of 64 x 28 to 1796 x 512. 1796 is the conv_out_size
-        # Pass through flattening layer
-        state = torch.flatten(state)      
-        # print("After flattening shape:", state.shape)
-        
-        # Pass through first linear layer
-        state = self.network[7](state)
-        # print("After first linear layer shape:", state.shape)
-        
-        # Pass through ReLU activation
-        state = self.network[8](state)
-        
-        # Pass through second linear layer
-        state = self.network[9](state)
-        # print("Output shape:", state.shape)
-        
-        return state
+        Q = self.network(state)
+        assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
+        return Q
+
 
 class ReplayMemory():
     """

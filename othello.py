@@ -100,7 +100,9 @@ class Othello():
             # plt.show()
             obs_cropped = [obs_cropped]
         obs = np.array(obs_cropped)
-        # print(obs.shape) # channel (1 if GRAY and 3 if RGB) x 90 x 66 
+        obs = np.expand_dims(obs, axis=0)
+        # SHAPE is as follows [batch size=1 x channel=(1 if GRAY and 3 if RGB) x Height=90 x Width=66] 
+        # print(obs.shape) 
         return obs
 
 class obs_space(Enum):
