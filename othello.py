@@ -5,6 +5,7 @@ from enum import Enum
 import numpy as np
 import matplotlib.pyplot as plt
 import Agents
+from tqdm import trange
 
 
 class Othello():
@@ -16,7 +17,6 @@ class Othello():
         self.OBS_TYPE = observation_type
         self.RECORD_VIDEO = record_video 
         self.ENV = self.setup_env()
-
 
     def setup_env(self):
         """
@@ -30,7 +30,6 @@ class Othello():
         if self.RECORD_VIDEO:
             env = RecordVideo(env=env, video_folder="./recordings", name_prefix="test-video", episode_trigger=lambda x: x % 2 == 0)
         return env
-
 
     def run(self):
         """
@@ -55,31 +54,77 @@ class Othello():
 
         self.ENV.close()
 
-    def run_DQN(self, episodes=1, T=10000):
+    def run_DQN(self, episodes=5, T=10000):
         # Get initial observation to preprocess and setup Agent
         observation, info = self.ENV.reset()
         obs = self.preprocess_obs(observation)
-        DQN_Agent = Agents.DQN(env=self.ENV, state_shape=obs.shape, num_actions=self.ENV.action_space.n, epsilon=0.5)
-
+        DQN_Agent = Agents.DQN(env=self.ENV, state_shape=obs.shape, num_actions=self.ENV.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
+        
         rewards = []
-        for e in range(episodes):
+        loss_record = []
+        q_record = []
+        for e in trange(episodes):
             observation, info = self.ENV.reset()
             state = self.preprocess_obs(observation)
             r = 0
-            for t in range(T):
-                # print(f"t: {t}")
+            for t in trange(T):
+                if len(DQN_Agent.memory) > 10**4:
+                    break
                 action = DQN_Agent.action(state)
-                observation, reward, terminated, truncated, info = self.ENV.step(action)
+                next_state, reward, terminated, truncated, info = self.ENV.step(action)
                 next_state = self.preprocess_obs(observation)
+
+                if terminated or truncated: 
+                    terminate = 1
+                else: 
+                    terminate  = 0
+                
+                DQN_Agent.memory.cache(state.squeeze(), action, reward, next_state.squeeze(), terminate)
+
+                q_vals, loss = DQN_Agent.train()
+
                 state = next_state
                 r += reward
                 if terminated or truncated:
                     break
+            if len(DQN_Agent.memory) > 10**4:
+                    break
             rewards.append(r)
-        print(f"Len rewards: {len(rewards)}")
-        print(f"Rewards: {np.mean(rewards)}")
+            loss_record.append(loss)
+            q_record.append(q_vals)
+        # print(f"Len rewards: {len(rewards)}")
+        print(f"Rewards: {rewards}")
+        print(f"Loss: {loss_record}")
+        print(f"Q_record: {q_record}")
+    
+    def evaluate_DQN_Agent(self):
+        observation, info = self.ENV.reset()
+        state = self.preprocess_obs(observation)
+        # Make epislon 0 so it always chooses actions learned by the agent
+        Test_DQN_Agent = Agents.DQN(env=self.ENV, state_shape=state.shape, num_actions=self.ENV.action_space.n, epsilon=0, alpha=0.01, gamma=0.9, sync_interval=10000)
+        Test_DQN_Agent.load_model('./DQN/model_4')
 
+        if self.RECORD_VIDEO:
+            self.ENV.start_video_recorder()
 
+        total_reward = 0
+        for t in trange(10000):
+            action = Test_DQN_Agent.action(state)
+            # print(f"action: {action}")
+            next_state, reward, terminated, truncated, info = self.ENV.step(action)
+            next_state = self.preprocess_obs(next_state)
+
+            state = next_state
+            total_reward += reward
+
+            if terminated or truncated:
+                break
+        print(f"Reward: {total_reward}")
+
+        if self.RECORD_VIDEO:
+            self.ENV.close_video_recorder()
+
+        self.ENV.close()
 
     def preprocess_obs(self, obs):
         """
