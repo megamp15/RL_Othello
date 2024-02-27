@@ -1,6 +1,4 @@
-from enum import Enum
-
-import othello
+from othello import Othello, RENDER_MODE, OBS_SPACE
 # TODO: Might want to setup command line arguments
 
 if __name__ == '__main__':
@@ -9,7 +7,7 @@ if __name__ == '__main__':
     OBSERVATION_TYPE = ["RGB", "GRAY", "RAM"] # RGB for color image, and GRAY for grayscale. RAM needs a diff env so that will cause an error for rn
     VIDEO = Bool  Note: Only works with render_mode: rgb_array. render_mode is hardcoded alread if this is True
     """
-    othello = othello.Othello(render_mode=othello.render_mode.RGB.value, observation_type=othello.obs_space.RGB.value, record_video=True)
+    othello = Othello(RENDER_MODE.HUMAN, OBS_SPACE.RGB, False)
 
     # Uncomment the following to run just the base othello 
     # othello.run()
