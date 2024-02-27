@@ -94,8 +94,8 @@ class Othello():
     def preprocess_obs(self, obs:np.ndarray) -> np.ndarray:
         """
         Crop the observation image to only look at the board.
-        This should come in as [105, 80, 3] for RGB or [105, 80] for GRAY
-        Rotate color channel to first (or add if GRAY), and add another in first for batch size
+        This should come in as [105, 80] for GRAY or [105, 80, 3] for RGB
+        Add color channel to first (or rotate if RGB), and add another in first for batch size
         Output size should be [batch_size, n_channel, height, width] = [1, 1 (or 3), 90, 66]
         Uncomment the imshow to see the images before the axes are changed
         """
