@@ -10,7 +10,9 @@ if __name__ == '__main__':
     othello = Othello(RENDER_MODE.HUMAN, OBS_SPACE.RGB, False)
 
     # Uncomment the following to run just the base othello 
-    # othello.run()
+    othello.run()
 
     # To run a test of the DQN algorithm based on the evaluate method: https://www.kaggle.com/code/pedrobarrios/proyecto2-yandexdataschool-week4-rlataribreakout
-    othello.run_DQN()
+    # othello.run_DQN()
+
+    # othello.evaluate_DQN_Agent()
