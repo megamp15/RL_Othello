@@ -4,8 +4,10 @@ from gymnasium.wrappers import ResizeObservation, FrameStack, RecordVideo
 from enum import Enum
 import numpy as np
 import matplotlib.pyplot as plt
-import Agents
 from tqdm import trange
+
+from dqn import DDQN
+
 
 class OBS_SPACE(Enum):
     """
@@ -85,7 +87,7 @@ class Othello():
         # Get initial observation to preprocess and setup Agent
         observation, _ = self.env.reset()
         obs = self.preprocess_obs(observation)
-        DQN_Agent = Agents.DQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
+        DDQN_Agent = DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
 
         rewards = []
         loss_record = []
@@ -95,10 +97,10 @@ class Othello():
             state = self.preprocess_obs(observation)
             r = 0
             for t in trange(max_turns):
-                if len(DQN_Agent.memory) > 10**4:
+                if len(DDQN_Agent.memory) > 10**4:
                     break
 
-                action = DQN_Agent.action(state)
+                action = DDQN_Agent.get_action(state)
                 observation, reward, terminated, truncated, _ = self.env.step(action)
                 next_state = self.preprocess_obs(observation)
 
@@ -107,15 +109,15 @@ class Othello():
                 else: 
                     terminate  = 0
                 
-                DQN_Agent.memory.cache(state.squeeze(), action, reward, next_state.squeeze(), terminate)
+                DDQN_Agent.memory.cache(state.squeeze(), action, reward, next_state.squeeze(), terminate)
 
-                q_vals, loss = DQN_Agent.train()
+                q_vals, loss = DDQN_Agent.train()
 
                 state = next_state
                 r += reward
                 if terminated or truncated:
                     break
-            if len(DQN_Agent.memory) > 10**4:
+            if len(DDQN_Agent.memory) > 10**4:
                     break
             rewards.append(r)
             loss_record.append(loss)
@@ -125,19 +127,19 @@ class Othello():
         print(f"Loss: {loss_record}")
         print(f"Q_record: {q_record}")
     
-    def evaluate_DQN_Agent(self):
+    def evaluate_DDQN_Agent(self):
         observation, _ = self.env.reset()
         state = self.preprocess_obs(observation)
         # Make epislon 0 so it always chooses actions learned by the agent
-        Test_DQN_Agent = Agents.DQN(env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=0, alpha=0.01, gamma=0.9, sync_interval=10000)
-        Test_DQN_Agent.load_model('./DQN/model_4')
+        Test_DDQN_Agent = DDQN(env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=0, alpha=0.01, gamma=0.9, sync_interval=10000)
+        Test_DDQN_Agent.load_model('./DQN/model_4')
 
         if self.record_video:
             self.env.start_video_recorder()
 
         total_reward = 0
         for t in trange(100000):
-            action = Test_DQN_Agent.action(state)
+            action = Test_DDQN_Agent.get_action(state)
             # print(f"action: {action}")
             next_state, reward, terminated, truncated, info = self.env.step(action)
             next_state = self.preprocess_obs(next_state)
@@ -177,3 +179,7 @@ class Othello():
             obs_cropped = np.expand_dims(obs_cropped, axis=0)
         # Add another dimension in front for batch size
         return np.expand_dims(obs_cropped, axis=0)
+
+if __name__ == '__main__':
+    othello = Othello(RENDER_MODE.HUMAN, OBS_SPACE.RGB, False)
+    othello.run_DQN()
