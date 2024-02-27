@@ -68,19 +68,22 @@ class Othello():
 
         self.env.close()
 
-    def run_DQN(self, episodes=1, max_turns=10000) -> None:
+    def run_DQN(self, episodes=5, max_turns=300000) -> None:
         # Get initial observation to preprocess and setup Agent
         observation, _ = self.env.reset()
         obs = self.preprocess_obs(observation)
-        DQN_Agent = Agents.DQN(self.env, obs.shape, num_actions=self.env.action_space.n, epsilon=0.5)
+        DQN_Agent = Agents.DQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
 
         rewards = []
-        for _ in range(episodes):
+        loss_record = []
+        q_record = []
+        for e in trange(episodes):
             observation, _ = self.env.reset()
             state = self.preprocess_obs(observation)
             r = 0
-            for _ in range(max_turns):
-                # print(f"t: {t}")
+            for t in trange(max_turns):
+                if len(DQN_Agent.memory) > 10**4:
+                    break
                 action = DQN_Agent.action(state)
                 observation, reward, terminated, truncated, _ = self.env.step(action)
                 next_state = self.preprocess_obs(observation)
@@ -109,11 +112,33 @@ class Othello():
         print(f"Q_record: {q_record}")
     
     def evaluate_DQN_Agent(self):
-        observation, info = self.ENV.reset()
+        observation, _ = self.env.reset()
         state = self.preprocess_obs(observation)
         # Make epislon 0 so it always chooses actions learned by the agent
-        Test_DQN_Agent = Agents.DQN(env=self.ENV, state_shape=state.shape, num_actions=self.ENV.action_space.n, epsilon=0, alpha=0.01, gamma=0.9, sync_interval=10000)
+        Test_DQN_Agent = Agents.DQN(env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=0, alpha=0.01, gamma=0.9, sync_interval=10000)
         Test_DQN_Agent.load_model('./DQN/model_4')
+
+        if self.record_video:
+            self.env.start_video_recorder()
+
+        total_reward = 0
+        for t in trange(100000):
+            action = Test_DQN_Agent.action(state)
+            # print(f"action: {action}")
+            next_state, reward, terminated, truncated, info = self.env.step(action)
+            next_state = self.preprocess_obs(next_state)
+
+            state = next_state
+            total_reward += reward
+
+            if terminated or truncated:
+                break
+        print(f"Reward: {total_reward}")
+
+        if self.record_video:
+            self.env.close_video_recorder()
+
+        self.env.close()
 
     def preprocess_obs(self, obs:np.ndarray) -> np.ndarray:
         """

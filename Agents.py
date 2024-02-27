@@ -5,6 +5,7 @@ from tensordict import TensorDict
 from torchrl.data import TensorDictReplayBuffer, LazyMemmapStorage
 import util
 import numpy as np
+import time
 
 # Define model
 class NeuralNet(nn.Module):
@@ -167,9 +168,9 @@ class DQN():
         """
         if self.step % self.sync_interval == 0:
             self.sync_w_to_target_net()
-        if self.step % 10000 == 0: # Save every 1000 eps
+        if self.step % 10000 == 0: # Save every n eps
             self.save_model()
-        if self.step < 1000:
+        if self.step < 10000:
             return None, None
         state, action, reward, next_state, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
@@ -179,7 +180,7 @@ class DQN():
         return (q_est.mean().item(), loss)
 
     def save_model(self):
-        torch.save(dict(self.network.state_dict()),(f"./DQN/model_{int(self.step // self.sync_interval)}"))
+        torch.save(dict(self.network.state_dict()),(f"./DQN/{time.strftime('%Y%m%d-%H%M%S')}_model_{int(self.step // self.sync_interval)}"))
         print(f'DQN Model saved at step: {self.step}')
 
     def load_model(self, model_path):
