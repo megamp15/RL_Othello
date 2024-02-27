@@ -20,6 +20,19 @@ class RENDER_MODE(Enum):
     HUMAN = "human"
     RGB = "rgb_array"
 
+class OBS_SPACE(Enum):
+    """
+    The observation spaces available through Gymnasium
+    """
+    RGB = "rgb"
+    GRAY = "grayscale"
+    RAM = "ram"
+
+
+class RENDER_MODE(Enum):
+    HUMAN = "human"
+    RGB = "rgb_array"
+
 
 class Othello():
     """
@@ -84,6 +97,7 @@ class Othello():
             for t in trange(max_turns):
                 if len(DQN_Agent.memory) > 10**4:
                     break
+
                 action = DQN_Agent.action(state)
                 observation, reward, terminated, truncated, _ = self.env.step(action)
                 next_state = self.preprocess_obs(observation)
@@ -140,6 +154,7 @@ class Othello():
 
         self.env.close()
 
+        
     def preprocess_obs(self, obs:np.ndarray) -> np.ndarray:
         """
         Crop the observation image to only look at the board.
