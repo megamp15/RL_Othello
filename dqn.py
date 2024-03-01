@@ -9,7 +9,7 @@ import gymnasium as gym
 from mem import ReplayMemory
 from nn import NeuralNet
 
-class DDQN():
+class DeepAgent():
     def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int):
         self.env = env
 
@@ -95,3 +95,7 @@ class DDQN():
 
     def load_model(self, model_path:str) -> None:
         self.network.load_state_dict(torch.load((model_path)))
+    
+
+class DDQN(DeepAgent):
+    pass
