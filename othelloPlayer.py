@@ -90,8 +90,9 @@ class AgentPlayer(OthelloPlayer):
         """
         Calls the agents action method. 
         Will the agent now take the board (state) and availableMoves?
+        get_action should return GameMove
         """
-        self.agent.get_action(board)
+        return self.agent.get_action(board)
 
     def reset(self, score:tuple[int,int]) -> None:
         """
