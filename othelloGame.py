@@ -49,7 +49,7 @@ class Othello():
             self.takeTurn()
         self.resetPlayer()
 
-    def performMove(self, move:GameMove) -> None:
+    def performMove(self, move:GameMove, coords:tuple[int,int]) -> tuple[int,int]:
         """
         Adjusts the current players position based on the move they chose
         """
@@ -80,6 +80,12 @@ class Othello():
         """
         pass
 
+    def getAvailableMoves(self, coords:tuple[int,int]) -> list[GameMove]:
+        """
+        Returns the available, valid moves that can be performed at the given coordinates.
+        """
+        pass
+
     def takeTurn(self) -> None:
         """
         Depending on whose turn it is, allows the player to perform their moves and place a tile.
@@ -95,8 +101,12 @@ class Othello():
             raise FileNotFoundError
         
         coords = self.board_size//2
-        while (move := current_player.selectMove(self.board, coords) != GameMove.PlaceTile):
-            self.performMove(move, coords)
+        availableMoves = self.getAvailableMoves(coords)
+        while (move := current_player.selectMove(self.board, coords, availableMoves) != GameMove.PlaceTile):
+            if move not in availableMoves:
+                raise FileNotFoundError
+            coords = self.performMove(move, coords)
+            availableMoves = self.getAvailableMoves(coords)
         self.placeTile(coords)
         
         self.player_turn = next_player
