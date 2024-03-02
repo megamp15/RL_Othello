@@ -46,15 +46,12 @@ class DeepAgent():
         current_Q = self.network(state)[np.arange(0, self.mem_batch_size), action]  
         return current_Q
 
-
     def update_network(self,q_w_estimate:float, q_target:float) -> float:
         loss = self.loss_func(q_w_estimate, q_target)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         return loss.item()
-
-    
 
     def save_model(self) -> None:
         torch.save(dict(self.network.state_dict()),(f"./DQN/{time.strftime('%Y%m%d-%H%M%S')}_model_{int(self.step // self.sync_interval)}"))
@@ -149,11 +146,8 @@ class DuelDQN(DeepAgent):
         return current_Q
     
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
-        target_Qs = self.network(next_state)
-        best_action = torch.argmax(target_Qs).item()
-        next_Q = self.target_net(next_state)[
-            torch.arange(0, self.mem_batch_size), best_action
-        ]
+        target_advantages = self.advantage_net(next_state)
+        next_Q = torch.max(target_advantages,dim=1)
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
 
