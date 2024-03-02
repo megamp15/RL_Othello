@@ -133,4 +133,20 @@ class DDQN(DeepAgent):
         return (q_est.mean().item(), loss)
 
 class DuelDQN(DeepAgent):
-    pass
+    
+    def train(self) -> tuple:
+        """
+        Model learning/optimization
+        """
+        if self.step % self.sync_interval == 0:
+            self.sync_w_to_target_net()
+        if self.step % 10000 == 0: # Save every n eps
+            self.save_model()
+        if self.step < 10000:
+            return None, None
+        state, action, reward, next_state, terminate = self.memory.recall()
+        q_est = self.current_q_w_estimate(state, action)
+        q_tgt = self.q_target(reward, next_state, terminate)
+        loss = self.update_network(q_est, q_tgt)
+        
+        return (q_est.mean().item(), loss)
