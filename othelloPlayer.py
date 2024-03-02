@@ -22,7 +22,7 @@ class OthelloPlayer(ABC):
         self.type = playerType
 
     @abstractmethod
-    def selectMove(self, board:np.ndarray, coords:tuple[int,int]) -> GameMove:
+    def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves:list[GameMove]) -> GameMove:
         """
         Based on the game state of the board, and the player's coordinates for selecting a square
         to place a tile, select a move to adjust its coordinates or place a tile ending their turn.
