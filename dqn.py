@@ -156,8 +156,6 @@ class DuelDQN(DeepAgent):
         """
         Model learning/optimization
         """
-        if self.step % self.sync_interval == 0:
-            self.sync_w_to_target_net()
         if self.step % 10000 == 0: # Save every n eps
             self.save_model()
         if self.step < 10000:
