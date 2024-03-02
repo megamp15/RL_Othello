@@ -46,6 +46,7 @@ class HumanPlayer(OthelloPlayer):
 
     def selectMove(self, board:np.ndarray=None, coords:tuple[int,int]=None, availableMoves: list[GameMove]=None) -> GameMove:
         if len(availableMoves) == 0:
+            print("No moves available")
             return None
         
         print("Please select one of the following available moves:")

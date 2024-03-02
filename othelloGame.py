@@ -36,7 +36,7 @@ class Othello():
         """
         Displays the game board graphically (will be filled in later if we have time)
         """
-        pass
+        print(self.board)
 
     def startGame(self) -> None:
         """
@@ -70,7 +70,7 @@ class Othello():
                 offset = [1,-1]
             case _:
                 raise FileNotFoundError
-        return coords + offset
+        return  tuple(np.array(coords) + offset)
     
     def isWithinBounds(self, coords:tuple[int,int]) -> bool:
         """
@@ -132,7 +132,7 @@ class Othello():
                     temp_mask = np.zeros(self.board_size,dtype=bool)
                     break
             if self.isWithinBounds(offset):
-                full_mask &= temp_mask
+                full_mask |= temp_mask
         return full_mask
 
     def checkGameOver(self) -> bool:
@@ -185,7 +185,6 @@ class Othello():
 
         if np.sum(self.findFlippableTiles(coords,active_player)) > 0:
             availableMoves.append(GameMove.PlaceTile)
-
         return availableMoves
 
     def takeTurn(self) -> None:
@@ -204,7 +203,7 @@ class Othello():
         
         coords = (self.board_size-[1,1])//2
         availableMoves = self.getAvailableMoves(coords)
-        while (move := current_player.selectMove(self.board, coords, availableMoves) != GameMove.PlaceTile):
+        while ((move := current_player.selectMove(self.board, coords, availableMoves)) != GameMove.PlaceTile):
             if move not in availableMoves:
                 raise FileNotFoundError
             coords = self.performMove(move, coords)
