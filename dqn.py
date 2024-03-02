@@ -134,6 +134,30 @@ class DDQN(DeepAgent):
 
 class DuelDQN(DeepAgent):
     
+    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.SmoothL1Loss):
+        super().__init__(self, env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval,loss_func)
+        
+        self.value_net = NeuralNet(state_shape, 1)
+        self.advantage_net = self.network
+        
+        
+    def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
+        value = self.value_net(state)[np.arange(0, self.mem_batch_size), 1]
+        advantages = self.network(state)[np.arange(0, self.mem_batch_size),:]
+        mean_advantage = advantages.mean(dim=1)
+        current_Q = value + (advantages - mean_advantage)
+        return current_Q
+    
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+        target_Qs = self.network(next_state)
+        best_action = torch.argmax(target_Qs).item()
+        next_Q = self.target_net(next_state)[
+            torch.arange(0, self.mem_batch_size), best_action
+        ]
+        not_done = 1 - terminate # Invert for mult below
+        return (reward + self.gamma * next_Q*not_done).float()
+
+    
     def train(self) -> tuple:
         """
         Model learning/optimization
