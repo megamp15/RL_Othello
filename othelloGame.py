@@ -1,9 +1,8 @@
 import pygame
 import numpy as np
 from enum import Enum
-from othelloPlayer import OthelloPlayer
+from othelloPlayer import OthelloPlayer, HumanPlayer
 from othelloUtil import GameMove
-from humanPlayer import humanPlayer
 
 class PlayerTurn(Enum):
     """
@@ -215,8 +214,8 @@ class Othello():
         self.player_turn = next_player
 
 if __name__ == '__main__':
-    player1 = humanPlayer()
-    player2 = humanPlayer()
+    player1 = HumanPlayer()
+    player2 = HumanPlayer()
     game = Othello(player1,player2,(8,8))
     game.findFlippableTiles((2,4),PlayerTurn.Player1)
     # game.startGame()
