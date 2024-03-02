@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange
 
-from dqn import DDQN
+from dqn import DDQN,DQN,DuelDQN
 
 
 class OBS_SPACE(Enum):
@@ -87,7 +87,9 @@ class Othello():
         # Get initial observation to preprocess and setup Agent
         observation, _ = self.env.reset()
         obs = self.preprocess_obs(observation)
-        DDQN_Agent = DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
+        #DDQN_Agent = DQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
+        #DDQN_Agent = DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
+        DDQN_Agent = DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
 
         rewards = []
         loss_record = []
