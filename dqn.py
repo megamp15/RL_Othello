@@ -102,7 +102,8 @@ class DDQN(DeepAgent):
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
-        best_action = torch.argmax(target_Qs).item()
+        best_action = torch.argmax(target_Qs,dim=1).tolist()
+        #print(torch.argmax(target_Qs))
         next_Q = self.target_net(next_state)[
             torch.arange(0, self.mem_batch_size), best_action
         ]
