@@ -22,7 +22,7 @@ class OthelloPlayer(ABC):
         self.type = playerType
 
     @abstractmethod
-    def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves: list[GameMove]) -> GameMove:
+    def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves:list[GameMove]) -> GameMove:
         """
         Based on the game state of the board, and the player's coordinates for selecting a square
         to place a tile, select a move to adjust its coordinates or place a tile ending their turn.
@@ -44,7 +44,7 @@ class HumanPlayer(OthelloPlayer):
         super().__init__(PlayerType.Human)
 
 
-    def selectMove(self, board:np.ndarray=None, coords:tuple[int,int]=None, availableMoves: list[GameMove]=None) -> GameMove:
+    def selectMove(self, board:np.ndarray=None, coords:tuple[int,int]=None, availableMoves:list[GameMove]=None) -> GameMove:
         if len(availableMoves) == 0:
             print("No moves available")
             return None
@@ -87,7 +87,7 @@ class AgentPlayer(OthelloPlayer):
             self.agent.load_model()
 
 
-    def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves: list[GameMove]) -> GameMove:
+    def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves:list[GameMove]) -> GameMove:
         """
         Calls the agents action method. 
         Will the agent now take the board (state) and availableMoves?
