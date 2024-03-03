@@ -8,8 +8,8 @@ class PlayerTurn(Enum):
     """
     To keep track of whose turn we are referring to.
     """
-    Player1 = 0
-    Player2 = 1
+    Player1 = 1
+    Player2 = -1
 
 
 class Othello():
@@ -27,10 +27,10 @@ class Othello():
         """
         half_size = self.board_size//2
         self.board = np.zeros(self.board_size)
-        self.board[half_size[0],half_size[1]] = 1
-        self.board[half_size[0]-1,half_size[1]-1] = 1
-        self.board[half_size[0]-1,half_size[1]] = -1
-        self.board[half_size[0],half_size[1]-1] = -1
+        self.board[half_size[0],half_size[1]] = PlayerTurn.Player2.value
+        self.board[half_size[0]-1,half_size[1]-1] = PlayerTurn.Player2.value
+        self.board[half_size[0]-1,half_size[1]] = PlayerTurn.Player1.value
+        self.board[half_size[0],half_size[1]-1] = PlayerTurn.Player1.value
     
     def displayBoard(self) -> None:
         """
@@ -85,46 +85,27 @@ class Othello():
         else:
             return True
 
-    def placeTile(self, coords:tuple[int,int]) -> None:
+    def placeTile(self, coords:tuple[int,int], playerTurn:PlayerTurn=None) -> None:
         """
         Places a tile at the given coordinates and flips any applicable tiles in each direction.
         """
+        if playerTurn == None:
+            playerTurn = self.player_turn
         if self.board[*coords] == 0:
-            if self.player_turn == PlayerTurn.Player1:
-                # Flip Tiles 
-                mask = self.findFlippableTiles(coords, PlayerTurn.Player1)
-                true_coords = np.where(mask)
-                true_coords = list(zip(true_coords[0], true_coords[1]))
-                for flip_tiles_coords in true_coords:
-                    self.board[*flip_tiles_coords]=-1
-                
-                self.board[*coords] = -1
-                current_player_tile = -1
-            elif self.player_turn == PlayerTurn.Player2:
-                # Flip Tiles 
-                mask = self.findFlippableTiles(coords, PlayerTurn.Player2)
-                true_coords = np.where(mask)
-                true_coords = list(zip(true_coords[0], true_coords[1]))
-                for flip_tiles_coords in true_coords:
-                    self.board[*flip_tiles_coords]=1
-                self.board[*coords] = 1
-                current_player_tile = 1
-            else:
-                raise FileNotFoundError
+            mask = self.findFlippableTiles(coords,playerTurn)
+            self.board[mask] = -self.board[mask]
+            self.board[*coords] = playerTurn.value
         else:
             raise FileNotFoundError
         
-    def findFlippableTiles(self,coords:tuple[int,int],playerTurn:PlayerTurn) -> np.ndarray[bool,bool]:
+    def findFlippableTiles(self,coords:tuple[int,int],playerTurn:PlayerTurn=None) -> np.ndarray[bool,bool]:
         """
         Finds a logical mask of the tiles to be flipped if the given player were to place a tile at the
         given coordinates. To be used for finding valid moves and for actual tile placement.
         """
-        if playerTurn == PlayerTurn.Player1:
-            current_player_tile = -1
-        elif playerTurn == PlayerTurn.Player2:
-            current_player_tile = 1
-        else:
-            raise FileNotFoundError
+        # Default to active player (can't reference self in function parameter)
+        if playerTurn == None:
+            playerTurn = self.player_turn
         
         directions = [[-1,0],
                       [1,0],
@@ -135,17 +116,21 @@ class Othello():
                       [1,1],
                       [1,-1]]
         full_mask = np.zeros(self.board_size,dtype=bool)
+        # Check in each direction from the given coords
         for d in directions:
             offset = np.array(coords)
             temp_mask = np.zeros(self.board_size,dtype=bool)
-            while self.isWithinBounds(offset:= offset + d) and self.board[*offset] != current_player_tile:
-                if self.board[*offset] == -current_player_tile:
+            # Continually apply the direction vector to the offset coordinates, and if its within bounds,
+            # and either has a tile of the opponent or no tile, add to the mask if its the opponent tile
+            # or reset if there is no tile
+            while self.isWithinBounds(offset:= offset + d) and self.board[*offset] != playerTurn.value:
+                if self.board[*offset] == -playerTurn.value:
                     temp_mask[*offset] = True
                 else:
                     temp_mask = np.zeros(self.board_size,dtype=bool)
                     break
-            if self.isWithinBounds(offset):
-                full_mask |= temp_mask
+            # Add this direction to the mask to be flipped
+            full_mask |= temp_mask
         return full_mask
 
     def checkGameOver(self) -> bool:
@@ -154,10 +139,10 @@ class Othello():
         or filling the entire board with tiles.
         """
         # The whole board is full
-        if np.sum(self.board == 0) == 0:
+        if np.sum(np.logical_and(self.board != PlayerTurn.Player1.value, self.board != PlayerTurn.Player2.value)) == 0:
             return True
         # The nonactive player has no more tiles on the board
-        elif np.sum(self.board == 1) == 0:
+        elif np.sum(self.board == -self.player_turn.value) == 0:
             return True
         # The nonactive player has no available positions to place a tile
         # elif len(self.getAvailableMoves())
@@ -168,13 +153,14 @@ class Othello():
         """
         Checks the active score for each player.
         """
-        player1_score = np.sum(self.board == -1)
-        player2_score = np.sum(self.board == 1)
+        player1_score = np.sum(self.board == PlayerTurn.Player1.value)
+        player2_score = np.sum(self.board == PlayerTurn.Player2.value)
         return (player1_score,player2_score)
 
     def resetPlayer(self) -> None:
         """
         Informs the othelloPlayer objects for player1 and player2 that the game is over and what the score was.
+        RL agents can use this to reset and play a new game.
         """
         score = self.countScore()
         self.player1.reset(score)
@@ -234,7 +220,7 @@ if __name__ == '__main__':
     player1 = HumanPlayer()
     player2 = HumanPlayer()
     game = Othello(player1,player2,(8,8))
-    game.findFlippableTiles((2,4),PlayerTurn.Player1)
+    # game.findFlippableTiles((2,4),PlayerTurn.Player1)
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     # game.takeTurn()
