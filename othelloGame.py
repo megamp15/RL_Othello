@@ -2,7 +2,7 @@ import pygame
 import numpy as np
 from enum import Enum
 from othelloPlayer import OthelloPlayer, HumanPlayer
-from othelloUtil import GameMove
+from othelloUtil import GameMove, clear
 
 class PlayerTurn(Enum):
     """
@@ -43,10 +43,10 @@ class Othello():
         Starts a new game of Othello
         """
         self.resetBoard()
-        print("Game started. Current Position: (3,3)")
+        print("Game started.\n Current Position: (3,3)")
         while not self.checkGameOver():
             self.takeTurn()
-            self.displayBoard()
+            # clear() # Clears out the cli 
         self.resetPlayer()
 
     def performMove(self, move:GameMove, coords:tuple[int,int]) -> tuple[int,int]:
@@ -91,9 +91,22 @@ class Othello():
         """
         if self.board[*coords] == 0:
             if self.player_turn == PlayerTurn.Player1:
+                # Flip Tiles 
+                mask = self.findFlippableTiles(coords, PlayerTurn.Player1)
+                true_coords = np.where(mask)
+                true_coords = list(zip(true_coords[0], true_coords[1]))
+                for flip_tiles_coords in true_coords:
+                    self.board[*flip_tiles_coords]=-1
+                
                 self.board[*coords] = -1
                 current_player_tile = -1
             elif self.player_turn == PlayerTurn.Player2:
+                # Flip Tiles 
+                mask = self.findFlippableTiles(coords, PlayerTurn.Player2)
+                true_coords = np.where(mask)
+                true_coords = list(zip(true_coords[0], true_coords[1]))
+                for flip_tiles_coords in true_coords:
+                    self.board[*flip_tiles_coords]=1
                 self.board[*coords] = 1
                 current_player_tile = 1
             else:
@@ -201,12 +214,17 @@ class Othello():
         else:
             raise FileNotFoundError
         
+        self.displayBoard()
+
         coords = (self.board_size-[1,1])//2
+        print(f"Current Position: {coords}")
         availableMoves = self.getAvailableMoves(coords)
         while ((move := current_player.selectMove(self.board, coords, availableMoves)) != GameMove.PlaceTile):
+            print(f"move: {move}")
             if move not in availableMoves:
                 raise FileNotFoundError
             coords = self.performMove(move, coords)
+            print(f"Current Position: {coords}")
             availableMoves = self.getAvailableMoves(coords)
         self.placeTile(coords)
         
@@ -220,5 +238,4 @@ if __name__ == '__main__':
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     # game.takeTurn()
-    game.displayBoard()
     game.startGame()

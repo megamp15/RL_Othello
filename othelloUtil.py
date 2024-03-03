@@ -1,4 +1,5 @@
 from enum import Enum
+from os import system, name
 
 class GameMove(Enum):
     """
@@ -14,3 +15,11 @@ class GameMove(Enum):
     SouthEast = 6
     SouthWest = 7
     PlaceTile = 8
+
+def clear():
+    # for windows
+    if name == 'nt':
+        _ = system('cls')
+    # for mac and linux(here, os.name is 'posix')
+    else:
+        _ = system('clear')
