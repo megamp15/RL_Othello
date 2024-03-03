@@ -9,18 +9,12 @@ import gymnasium as gym
 from mem import ReplayMemory
 from nn import NeuralNet
 
-class DDQN():
-    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int):
+class DeepAgent():
+    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.MSELoss):
         self.env = env
 
         # The Neural Networks for The main Q network and the target network
         self.network = NeuralNet(state_shape, num_actions)
-        self.target_net = NeuralNet(state_shape, num_actions)
-        # Copy inital weights from Q Network into the target network
-        self.target_net.load_state_dict(self.network.state_dict())
-        # # Q_target parameters are frozen.
-        # for p in self.target_net.parameters():
-        #     p.requires_grad = False
 
         # Setup memory for DQN algorithm
         self.memory = ReplayMemory(10**4, 16, self.network.device)
@@ -33,7 +27,7 @@ class DDQN():
         self.gamma = gamma
         
         self.optimizer = optim.AdamW(self.network.parameters(), lr=alpha)
-        self.loss_func = nn.SmoothL1Loss()
+        self.loss_func = loss_func()
         self.sync_interval = sync_interval
         
 
@@ -52,16 +46,6 @@ class DDQN():
         current_Q = self.network(state)[np.arange(0, self.mem_batch_size), action]  
         return current_Q
 
-    @torch.no_grad() # No Backwards computations needed
-    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
-        target_Qs = self.network(next_state)
-        best_action = torch.argmax(target_Qs).item()
-        next_Q = self.target_net(next_state)[
-            torch.arange(0, self.mem_batch_size), best_action
-        ]
-        not_done = 1 - terminate # Invert for mult below
-        return (reward + self.gamma * next_Q*not_done).float()
-
     def update_network(self,q_w_estimate:float, q_target:float) -> float:
         loss = self.loss_func(q_w_estimate, q_target)
         self.optimizer.zero_grad()
@@ -69,9 +53,65 @@ class DDQN():
         self.optimizer.step()
         return loss.item()
 
+    def save_model(self) -> None:
+        torch.save(dict(self.network.state_dict()),(f"./DQN/{time.strftime('%Y%m%d-%H%M%S')}_model_{int(self.step // self.sync_interval)}"))
+        print(f'DQN Model saved at step: {self.step}')
+
+    def load_model(self, model_path:str) -> None:
+        self.network.load_state_dict(torch.load((model_path)))
+    
+
+class DQN(DeepAgent):
+    
+    @torch.no_grad() # No Backwards computations needed
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+        target_Qs = self.network(next_state)
+        best_action = torch.argmax(target_Qs,dim=1).tolist()
+        next_Q = self.network(next_state)[
+            torch.arange(0, self.mem_batch_size), best_action
+        ]
+        not_done = 1 - terminate # Invert for mult below
+        return (reward + self.gamma * next_Q*not_done).float()
+    
+    def train(self) -> tuple:
+        """
+        Model learning/optimization
+        """
+        if self.step % 10000 == 0: # Save every n eps
+            self.save_model()
+        if self.step < 10000:
+            return None, None
+        state, action, reward, next_state, terminate = self.memory.recall()
+        q_est = self.current_q_w_estimate(state, action)
+        q_tgt = self.q_target(reward, next_state, terminate)
+        loss = self.update_network(q_est, q_tgt)
+        
+        return (q_est.mean().item(), loss)
+
+class DDQN(DeepAgent):
+    
+    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.MSELoss):
+        super().__init__(env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval, loss_func)
+        self.target_net = NeuralNet(state_shape, num_actions)
+        # Copy inital weights from Q Network into the target network
+        self.target_net.load_state_dict(self.network.state_dict())
+        # # Q_target parameters are frozen.
+        # for p in self.target_net.parameters():
+        #     p.requires_grad = False
+        
+    @torch.no_grad() # No Backwards computations needed
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+        target_Qs = self.network(next_state)
+        best_action = torch.argmax(target_Qs,dim=1).tolist()
+        next_Q = self.target_net(next_state)[
+            torch.arange(0, self.mem_batch_size), best_action
+        ]
+        not_done = 1 - terminate # Invert for mult below
+        return (reward + self.gamma * next_Q*not_done).float()
+    
     def sync_w_to_target_net(self) -> None:
         self.target_net.load_state_dict(self.network.state_dict())
-    
+        
     def train(self) -> tuple:
         """
         Model learning/optimization
@@ -89,9 +129,40 @@ class DDQN():
         
         return (q_est.mean().item(), loss)
 
-    def save_model(self) -> None:
-        torch.save(dict(self.network.state_dict()),(f"./DQN/{time.strftime('%Y%m%d-%H%M%S')}_model_{int(self.step // self.sync_interval)}"))
-        print(f'DQN Model saved at step: {self.step}')
+class DuelDQN(DeepAgent):
+    
+    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.MSELoss):
+        super().__init__(env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval,loss_func)
+        
+        self.value_net = NeuralNet(state_shape, 1)
+        self.advantage_net = self.network
+        
+        
+    def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
+        value = self.value_net(state)[np.arange(0, self.mem_batch_size), 0]
+        advantages = self.network(state)[np.arange(0, self.mem_batch_size),:]
+        mean_advantage = advantages.mean(dim=1)
+        current_Q = value + (advantages[:,action.tolist()] - mean_advantage)
+        return current_Q
+    
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+        target_advantages = self.advantage_net(next_state)
+        next_Q = torch.max(target_advantages,dim=1).values
+        not_done = 1 - terminate # Invert for mult below
+        return (reward + self.gamma * next_Q*not_done).float()
 
-    def load_model(self, model_path:str) -> None:
-        self.network.load_state_dict(torch.load((model_path)))
+    
+    def train(self) -> tuple:
+        """
+        Model learning/optimization
+        """
+        if self.step % 10000 == 0: # Save every n eps
+            self.save_model()
+        if self.step < 10000:
+            return None, None
+        state, action, reward, next_state, terminate = self.memory.recall()
+        q_est = self.current_q_w_estimate(state, action)
+        q_tgt = self.q_target(reward, next_state, terminate)
+        loss = self.update_network(q_est, q_tgt)
+        
+        return (q_est.mean().item(), loss)
