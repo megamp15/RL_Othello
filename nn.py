@@ -22,13 +22,13 @@ class NeuralNet(nn.Module):
         self.input_dim = input_dim
         self.batch_size, self.channel, self.height, self.width = self.input_dim
         self.output_dim = output_dim
+        self.device = self.device()
         # print(f"input_dim: {input_dim}, output_dim: {output_dim}")
 
         self.network = self.construct_network()
         self.network = self.network.to(self.device)
         print(self.network)
 
-    @property
     def device(self):
         """Retrieve device for tensorflow"""
         if torch.cuda.is_available():
