@@ -46,6 +46,7 @@ class Othello():
         print("Game started. Current Position: (3,3)")
         while not self.checkGameOver():
             self.takeTurn()
+            self.displayBoard()
         self.resetPlayer()
 
     def performMove(self, move:GameMove, coords:tuple[int,int]) -> tuple[int,int]:
@@ -90,11 +91,11 @@ class Othello():
         """
         if self.board[*coords] == 0:
             if self.player_turn == PlayerTurn.Player1:
-                self.board[*coords] = 1
-                current_player_tile = 1
-            elif self.player_turn == PlayerTurn.Player2:
                 self.board[*coords] = -1
                 current_player_tile = -1
+            elif self.player_turn == PlayerTurn.Player2:
+                self.board[*coords] = 1
+                current_player_tile = 1
             else:
                 raise FileNotFoundError
         else:
@@ -218,5 +219,6 @@ if __name__ == '__main__':
     game.findFlippableTiles((2,4),PlayerTurn.Player1)
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
-    game.takeTurn()
-    # game.startGame()
+    # game.takeTurn()
+    game.displayBoard()
+    game.startGame()
