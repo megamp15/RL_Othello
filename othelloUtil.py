@@ -16,6 +16,28 @@ class GameMove(Enum):
     SouthWest = 7
     PlaceTile = 8
 
+def gameMoveToOffset(move:GameMove) -> tuple[int,int]:
+    match move:
+        case GameMove.North:
+            offset = [-1,0]
+        case GameMove.South:
+            offset = [1,0]
+        case GameMove.East:
+            offset = [0,1]
+        case GameMove.West:
+            offset = [0,-1]
+        case GameMove.NorthEast:
+            offset = [-1,1]
+        case GameMove.NorthWest:
+            offset = [-1,-1]
+        case GameMove.SouthEast:
+            offset = [1,1]
+        case GameMove.SouthWest:
+            offset = [1,-1]
+        case _:
+            raise FileNotFoundError
+    return offset
+
 def clear():
     # for windows
     if name == 'nt':
