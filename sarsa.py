@@ -7,14 +7,13 @@ from nn import NeuralNet
 
 from agent import DeepAgent
 
-class DQN(DeepAgent):
+class SARSA(DeepAgent):
     
     @torch.no_grad() # No Backwards computations needed
-    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
-        best_action = torch.argmax(target_Qs,dim=1).tolist()
         next_Q = self.network(next_state)[
-            torch.arange(0, self.mem_batch_size), best_action
+            torch.arange(0, self.mem_batch_size), next_action
         ]
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
@@ -27,14 +26,14 @@ class DQN(DeepAgent):
             self.save_model()
         if self.step < 10000:
             return None, None
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
-        q_tgt = self.q_target(reward, next_state, terminate)
+        q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
         
         return (q_est.mean().item(), loss)
 
-class DDQN(DeepAgent):
+class SARSA_DDQN(DeepAgent):
     
     def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.MSELoss):
         super().__init__(env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval, loss_func)
@@ -46,11 +45,10 @@ class DDQN(DeepAgent):
         #     p.requires_grad = False
         
     @torch.no_grad() # No Backwards computations needed
-    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
-        best_action = torch.argmax(target_Qs,dim=1).tolist()
         next_Q = self.target_net(next_state)[
-            torch.arange(0, self.mem_batch_size), best_action
+            torch.arange(0, self.mem_batch_size), next_action
         ]
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
@@ -68,14 +66,14 @@ class DDQN(DeepAgent):
             self.save_model()
         if self.step < 10000:
             return None, None
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
-        q_tgt = self.q_target(reward, next_state, terminate)
+        q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
         
         return (q_est.mean().item(), loss)
 
-class DuelDQN(DeepAgent):
+class SARSA_DuelDQN(DeepAgent):
     
     def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.MSELoss):
         super().__init__(env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval,loss_func)
@@ -91,9 +89,9 @@ class DuelDQN(DeepAgent):
         current_Q = value + (advantages[:,action.tolist()] - mean_advantage)
         return current_Q
     
-    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
+    def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_advantages = self.advantage_net(next_state)
-        next_Q = torch.max(target_advantages,dim=1).values
+        next_Q = target_advantages[torch.arange(0, self.mem_batch_size), next_action]
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
 
@@ -106,9 +104,9 @@ class DuelDQN(DeepAgent):
             self.save_model()
         if self.step < 10000:
             return None, None
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
-        q_tgt = self.q_target(reward, next_state, terminate)
+        q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
         
         return (q_est.mean().item(), loss)
