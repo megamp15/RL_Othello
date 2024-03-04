@@ -119,8 +119,15 @@ class Othello():
                 else: 
                     terminate  = 0
                 
+                if self.obs_type == OBS_SPACE.GRAY:
+                    state_mem = state[0]
+                    next_state_mem = next_state[0]
+                else:
+                    state_mem = state.squeeze()
+                    next_state_mem = next_state.squeeze()
+                
                  # Store step in memory 
-                Agent.memory.cache(state.squeeze(), action, reward, next_state.squeeze(), terminate)
+                Agent.memory.cache(state_mem, action, reward, next_state_mem, terminate)
 
                 # Update Q-Vals
                 # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
@@ -148,9 +155,9 @@ class Othello():
         obs = self.preprocess_obs(observation)
 
         # SARSA Agents
-        Agent = SARSA(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
+        # Agent = SARSA(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=100, save_interval=10_1000, sync_interval=10_000)
         # Agent = SARSA_DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
-        # Agent = SARSA_DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
+        Agent = SARSA_DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
 
         rewards = []
         loss_record = []
@@ -181,9 +188,16 @@ class Othello():
 
                 # Choose A' from S' using policy
                 next_action = Agent.get_action(next_state)  # Get next action for SARSA
+                
+                if self.obs_type == OBS_SPACE.GRAY:
+                    state_mem = state[0]
+                    next_state_mem = next_state[0]
+                else:
+                    state_mem = state.squeeze()
+                    next_state_mem = next_state.squeeze()
 
                 # Store step in memory 
-                Agent.memory.cache(state.squeeze(), action, reward, next_state.squeeze(), terminate, next_action)
+                Agent.memory.cache(state_mem, action, reward, next_state_mem, terminate, next_action)
 
                 # Update Q-Vals
                 # Q(S,A) <- Q(S,A) + alpha[R + gamma * Q(S',A') - Q(S,A)]
@@ -289,7 +303,7 @@ class Othello():
         return np.expand_dims(obs_cropped, axis=0)
 
 if __name__ == '__main__':
-    othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, True)
-    othello.train_QLearning()
-    # othello.train_SARSA()
+    othello = Othello(RENDER_MODE.RGB, OBS_SPACE.GRAY, True)
+    # othello.train_QLearning()
+    othello.train_SARSA()
 

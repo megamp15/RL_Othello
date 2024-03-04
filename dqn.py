@@ -90,7 +90,7 @@ class DuelDQN(DeepAgent):
         value = self.value_net(state)[np.arange(0, self.mem_batch_size), 0]
         advantages = self.network(state)[np.arange(0, self.mem_batch_size),:]
         mean_advantage = advantages.mean(dim=1)
-        current_Q = value + (advantages[:,action.tolist()] - mean_advantage)
+        current_Q = value + (advantages[np.arange(0, self.mem_batch_size),action.tolist()] - mean_advantage)
         return current_Q
     
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:

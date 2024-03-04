@@ -33,14 +33,14 @@ class ReplayMemory():
         """
         samples = self.memory.sample(self.batch_size).to(self.device)
         state, action, reward, next_state, terminate = (samples.get(key) for key in ("state", "action", "reward", "next_state", "terminate"))
-        state = torch.tensor(state, device=self.device, dtype=torch.float) 
-        action =  torch.tensor(action, device=self.device, dtype=torch.long) 
-        reward = torch.tensor(reward, device=self.device, dtype=torch.float)
-        next_state = torch.tensor(next_state, device=self.device, dtype=torch.float)
-        terminate = torch.tensor(terminate, device=self.device, dtype=torch.float)
+        state=state.clone().detach().float()  
+        action=action.clone().detach().long() 
+        reward=reward.clone().detach().float() 
+        next_state=next_state.clone().detach().float() 
+        terminate=terminate.clone().detach().float() 
 
         if "next_action" in samples.keys():
-            next_action = torch.tensor(samples["next_action"], device=self.device, dtype=torch.long)
+            next_action = samples["next_action"].clone().detach().long() 
             return state, action.squeeze(), reward.squeeze(), next_state, next_action.squeeze(), terminate.squeeze()
 
         return state, action.squeeze(), reward.squeeze(), next_state, terminate.squeeze()
