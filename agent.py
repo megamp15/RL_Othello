@@ -10,7 +10,7 @@ from mem import ReplayMemory
 from nn import NeuralNet
 
 class DeepAgent():
-    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int,loss_func = nn.MSELoss):
+    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
         self.env = env
 
         # The Neural Networks for The main Q network and the target network
@@ -21,6 +21,8 @@ class DeepAgent():
         self.mem_batch_size = self.memory.batch_size
 
         self.step = 0 # Current Step of the agent
+        self.skip_training = skip_training # Skip the first n amount of training steps
+        self.save_interval = save_interval # Save the model every n steps
 
         # Hyperparameters
         self.epsilon = epsilon

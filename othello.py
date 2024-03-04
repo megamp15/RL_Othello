@@ -89,9 +89,9 @@ class Othello():
         obs = self.preprocess_obs(observation)
 
         # DQN Agents
-        Agent = DQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10_000)
-        # Agent = DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10_000)
-        # Agent = DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10_000)
+        # Agent = DQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
+        # Agent = DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
+        Agent = DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
 
         rewards = []
         loss_record = []
@@ -148,9 +148,9 @@ class Othello():
         obs = self.preprocess_obs(observation)
 
         # SARSA Agents
-        # Agent = SARSA(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10_000)
-        # Agent = SARSA_DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10_000)
-        Agent = SARSA_DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10_000)
+        Agent = SARSA(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
+        # Agent = SARSA_DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
+        # Agent = SARSA_DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, skip_training=10_000, save_interval=10_1000, sync_interval=10_000)
 
         rewards = []
         loss_record = []
@@ -290,6 +290,6 @@ class Othello():
 
 if __name__ == '__main__':
     othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, True)
-    # othello.train_QLearning()
-    othello.train_SARSA()
+    othello.train_QLearning()
+    # othello.train_SARSA()
 
