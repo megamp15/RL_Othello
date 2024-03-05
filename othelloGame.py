@@ -216,10 +216,10 @@ class Othello():
         moveMask = self.findAvailableTilePlacements(selectedPlayer)
         for direction in directionMoves:
             if self.isWithinBounds(new_coords := self.performMove(direction,coords)) \
-                and np.sum(self.findFlippableTiles(new_coords,active_player)) > 0:
+                and np.sum(self.findFlippableTiles(new_coords,selectedPlayer)) > 0:
                 availableMoves.append(direction)
 
-        if np.sum(self.findFlippableTiles(coords,active_player)) > 0:
+        if np.sum(self.findFlippableTiles(coords,selectedPlayer)) > 0:
             availableMoves.append(GameMove.PlaceTile)
         return availableMoves
 
