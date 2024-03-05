@@ -42,15 +42,17 @@ class Othello():
         """
         Displays the game board graphically (will be filled in later if we have time)
         """
-        pass
+        print(self.board)
 
     def startGame(self) -> None:
         """
         Starts a new game of Othello
         """
         self.resetBoard()
+        print("Game started.\n Current Position: (3,3)")
         while not self.checkGameOver():
             self.takeTurn()
+            # clear() # Clears out the cli 
         self.resetPlayer()
 
     def performMove(self, move:GameMove, coords:tuple[int,int]) -> tuple[int,int]:
@@ -59,24 +61,24 @@ class Othello():
         """
         match move:
             case GameMove.North:
-                offset = [0,1]
-            case GameMove.South:
-                offset = [0,-1]
-            case GameMove.East:
                 offset = [-1,0]
-            case GameMove.West:
+            case GameMove.South:
                 offset = [1,0]
+            case GameMove.East:
+                offset = [0,1]
+            case GameMove.West:
+                offset = [0,-1]
             case GameMove.NorthEast:
                 offset = [-1,1]
             case GameMove.NorthWest:
-                offset = [1,1]
-            case GameMove.SouthEast:
                 offset = [-1,-1]
+            case GameMove.SouthEast:
+                offset = [1,1]
             case GameMove.SouthWest:
                 offset = [1,-1]
             case _:
                 raise FileNotFoundError
-        return coords + offset
+        return  tuple(np.array(coords) + offset)
     
     def isWithinBounds(self, coords:tuple[int,int]) -> bool:
         """
@@ -104,8 +106,6 @@ class Othello():
         else:
             raise FileNotFoundError
         
-        
-    
     def findFlippableTiles(self,coords:tuple[int,int],playerTurn:PlayerTurn) -> np.ndarray[bool,bool]:
         """
         Finds a logical mask of the tiles to be flipped if the given player were to place a tile at the
@@ -132,7 +132,7 @@ class Othello():
                     temp_mask = np.zeros(self.board_size,dtype=bool)
                     break
             if self.isWithinBounds(offset):
-                full_mask &= temp_mask
+                full_mask |= temp_mask
         return full_mask
 
     def checkGameOver(self) -> bool:
@@ -155,8 +155,8 @@ class Othello():
         """
         Checks the active score for each player.
         """
-        player1_score = np.sum(self.board == 1)
-        player2_score = np.sum(self.board == -1)
+        player1_score = np.sum(self.board == -1)
+        player2_score = np.sum(self.board == 1)
         return (player1_score,player2_score)
 
     def resetPlayer(self) -> None:
@@ -221,7 +221,6 @@ class Othello():
 
         if np.sum(self.findFlippableTiles(coords,active_player)) > 0:
             availableMoves.append(GameMove.PlaceTile)
-
         return availableMoves
 
     def takeTurn(self) -> None:
@@ -253,8 +252,11 @@ class Othello():
         self.activePlayer = self.flipTurn(self.activePlayer)
 
 if __name__ == '__main__':
-    player1 = humanPlayer()
-    player2 = humanPlayer()
+    player1 = HumanPlayer()
+    player2 = HumanPlayer()
     game = Othello(player1,player2,(8,8))
     game.findFlippableTiles((2,4),PlayerTurn.Player1)
-    # game.startGame()
+    # The available moves at (3,3) are north and east
+    # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
+    # game.takeTurn()
+    game.startGame()

@@ -1,4 +1,5 @@
 from enum import Enum
+from os import system, name
 
 class GameMove(Enum):
     """
