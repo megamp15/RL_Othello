@@ -1,9 +1,9 @@
 import pygame
 import numpy as np
 from enum import Enum
-from othelloPlayer import OthelloPlayer
-from othelloUtil import GameMove
-from humanPlayer import humanPlayer
+from othelloPlayer import OthelloPlayer, HumanPlayer
+from othelloUtil import *
+import itertools
 
 class PlayerTurn(Enum):
     """
@@ -14,13 +14,18 @@ class PlayerTurn(Enum):
 
 
 class Othello():
-    def __init__(self, player1:OthelloPlayer, player2:OthelloPlayer, board_size:tuple[int,int]=(8,8)) -> None:
+    """
+    An Othello (Reversi) game that can be played by humans and AI alike, or for training RL agents how to play!
+    """
+    def __init__(self, player1:OthelloPlayer, player2:OthelloPlayer, board_size:tuple[int,int]=(8,8), \
+                 mode:MoveMode=MoveMode.Directions8) -> None:
         pygame.init()
         self.board_size = np.array(board_size)
         self.resetBoard()
         self.player1 = player1
         self.player2 = player2
-        self.player_turn = PlayerTurn.Player1
+        self.activePlayer = PlayerTurn.Player1
+        self.mode = mode
 
     def resetBoard(self) -> None:
         """
@@ -88,15 +93,14 @@ class Othello():
         """
         Places a tile at the given coordinates and flips any applicable tiles in each direction.
         """
-        if self.board[*coords] == 0:
-            if self.player_turn == PlayerTurn.Player1:
-                self.board[*coords] = 1
-                current_player_tile = 1
-            elif self.player_turn == PlayerTurn.Player2:
-                self.board[*coords] = -1
-                current_player_tile = -1
-            else:
-                raise FileNotFoundError
+        # Default to current player
+        if selectedPlayer == None:
+            selectedPlayer = self.activePlayer
+        # Check if the current coords has no tile, then flip applicable tiles and place new one
+        if self.board[*coords] == PlayerTurn.NoPlayer.value:
+            mask = self.findFlippableTiles(coords,selectedPlayer)
+            self.board[mask] = -self.board[mask]
+            self.board[*coords] = selectedPlayer.value
         else:
             raise FileNotFoundError
         
@@ -107,28 +111,23 @@ class Othello():
         Finds a logical mask of the tiles to be flipped if the given player were to place a tile at the
         given coordinates. To be used for finding valid moves and for actual tile placement.
         """
-        if playerTurn == PlayerTurn.Player1:
-            current_player_tile = 1
-        elif playerTurn == PlayerTurn.Player2:
-            current_player_tile = -1
-        else:
-            raise FileNotFoundError
+        # Default to active player (can't reference self in function parameter)
+        if selectedPlayer == None:
+            selectedPlayer = self.activePlayer
         
-        directions = [[0,1],
-                      [1,1],
-                      [1,0],
-                      [1,-1],
-                      [0,-1],
-                      [-1,-1],
-                      [-1,0],
-                      [-1,1]]
+        directions = getDirectionMoves_8()
         full_mask = np.zeros(self.board_size,dtype=bool)
         for d in directions:
-            offset = np.array(coords)
+            offset = gameMoveToOffset(d)
+            next_position = np.array(coords)
             temp_mask = np.zeros(self.board_size,dtype=bool)
-            while self.isWithinBounds(offset:= offset + d) and self.board[*offset] != current_player_tile:
-                if self.board[*offset] == -current_player_tile:
-                    temp_mask[*offset] = True
+            # Continually apply the direction vector to the offset coordinates, and if its within bounds,
+            # and either has a tile of the opponent or no tile, add to the mask if its the opponent tile
+            # or reset if there is no tile
+            while self.isWithinBounds(next_position:= next_position + offset) and \
+                  self.board[*next_position] != selectedPlayer.value:
+                if self.board[*next_position] == -selectedPlayer.value:
+                    temp_mask[*next_position] = True
                 else:
                     temp_mask = np.zeros(self.board_size,dtype=bool)
                     break
@@ -167,18 +166,54 @@ class Othello():
         score = self.countScore()
         self.player1.reset(score)
         self.player2.reset(score)
+    
+    def getPlayer(self, selectedTurn:PlayerTurn=None) -> OthelloPlayer:
+        """
+        Retuns the player object corresponding to the selected turn.
+        """
+        if selectedTurn == None:
+            selectedTurn = self.activePlayer
+        if selectedTurn == PlayerTurn.Player1:
+            return self.player1
+        elif selectedTurn == PlayerTurn.Player2:
+            return self.player2
+    
+    def flipTurn(self, selectedPlayer:PlayerTurn=None) -> PlayerTurn:
+        """
+        Return the next player after the selected one.
+        """
+        if selectedPlayer == None:
+            selectedPlayer = self.activePlayer
+        if selectedPlayer == PlayerTurn.Player1:
+            return PlayerTurn.Player2
+        elif selectedPlayer == PlayerTurn.Player2:
+            return PlayerTurn.Player1
+        else:
+            raise FileNotFoundError
 
-    def getAvailableMoves(self, coords:tuple[int,int], active_player:PlayerTurn=None) -> list[GameMove]:
+    def getAvailableMoves(self, coords:tuple[int,int]=None, selectedPlayer:PlayerTurn=None) -> list[GameMove]:
         """
         Returns the available, valid moves that can be performed at the given coordinates.
         """
-        if active_player == None:
-            active_player = self.player_turn
+        # Default to the active player
+        if selectedPlayer == None:
+            selectedPlayer = self.activePlayer
+        # We should pass None for coords if using FullBoardSelect
+        if coords == None and self.getPlayer(selectedPlayer).mode != MoveMode.FullBoardSelect:
+            raise FileNotFoundError
 
         availableMoves = list[GameMove]()
-        directionMoves = [GameMove.North,GameMove.South,GameMove.East,GameMove.West,
-                          GameMove.NorthEast,GameMove.NorthWest,GameMove.SouthEast,GameMove.SouthWest]
-        
+        if self.mode == MoveMode.Directions8:
+            directionMoves = getDirectionMoves_8()
+        elif self.mode == MoveMode.Directions4:
+            directionMoves = getDirectionMoves_4()
+        else:
+            moves = np.where(self.findAvailableTilePlacements(selectedPlayer))
+            return [tuple(x) for x in moves]
+
+        coords = np.array(coords)
+        # Find all available tile placements and check if any of the direction moves can move to one
+        moveMask = self.findAvailableTilePlacements(selectedPlayer)
         for direction in directionMoves:
             if self.isWithinBounds(new_coords := self.performMove(direction,coords)) \
                 and np.sum(self.findFlippableTiles(new_coords,active_player)) > 0:
@@ -193,26 +228,29 @@ class Othello():
         """
         Depending on whose turn it is, allows the player to perform their moves and place a tile.
         This will wait on input from the player if the playerType is not AI.
-        """
-        if self.player_turn == PlayerTurn.Player1:
-            current_player = self.player1
-            next_player = PlayerTurn.Player2
-        elif self.player_turn == PlayerTurn.Player2:
-            current_player = self.player2
-            next_player = PlayerTurn.Player1
-        else:
-            raise FileNotFoundError
-        
-        coords = (self.board_size-[1,1])//2
-        availableMoves = self.getAvailableMoves(coords)
-        while (move := current_player.selectMove(self.board, coords, availableMoves) != GameMove.PlaceTile):
-            if move not in availableMoves:
-                raise FileNotFoundError
-            coords = self.performMove(move, coords)
+        """        
+        current_player = self.getPlayer(self.activePlayer)
+        self.displayBoard()
+
+        if self.mode == MoveMode.FullBoardSelect:
+            coords = (self.board_size-[1,1])//2
+            print(f"Current Position: {coords}")
+            self.displayBoard()
             availableMoves = self.getAvailableMoves(coords)
+            while ((move := current_player.selectMove(self.board, coords, availableMoves)) != GameMove.PlaceTile):
+                print(f"move: {move}")
+                if move not in availableMoves:
+                    raise FileNotFoundError
+                coords = self.performMove(move, coords)
+                print(f"Current Position: {coords}")
+                availableMoves = self.getAvailableMoves(coords)
+        else:
+            self.displayBoard()
+            availableMoves = self.getAvailableMoves()
+            coords = current_player.selectMove(self.board, availableMoves)
+
         self.placeTile(coords)
-        
-        self.player_turn = next_player
+        self.activePlayer = self.flipTurn(self.activePlayer)
 
 if __name__ == '__main__':
     player1 = humanPlayer()
