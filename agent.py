@@ -10,7 +10,7 @@ from mem import ReplayMemory
 from nn import NeuralNet
 
 class DeepAgent():
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
+    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
         self.env = env
 
         # The Neural Networks for The main Q network and the target network
@@ -26,16 +26,21 @@ class DeepAgent():
 
         # Hyperparameters
         self.epsilon = epsilon
+        self.epsilon_decay_rate = epsilon_decay_rate
+        self.epsilon_min = epsilon_min
         self.gamma = gamma
         
         self.optimizer = optim.AdamW(self.network.parameters(), lr=alpha)
         self.loss_func = loss_func()
         self.sync_interval = sync_interval
         self.agent_type = agent_type
-        
+    
+    def decay_epsilon(self):
+        self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray) -> int:
-        # if epsilonn=0 then flipCoin returns False, if epsilon=1 then flipCoin returns True
+        self.decay_epsilon()
+        # if epsilon=0 then flipCoin returns False, if epsilon=1 then flipCoin returns True
         if util.flipCoin(self.epsilon):
             action = self.env.action_space.sample()
         else:
