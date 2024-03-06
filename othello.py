@@ -7,6 +7,21 @@ import matplotlib.pyplot as plt
 from tqdm import trange
 
 from dqn import DDQN,DQN,DuelDQN
+from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
+
+# AGENT PARAMS
+EPSILON = .75
+EPSILON_DECAY_RATE = 0.99
+EPSILON_MIN = 0.01
+ALPHA = 0.01
+GAMMA = 0.9
+SKIP_TRAINING = 1_000
+SAVE_INTERVAL = 500
+SYNC_INTERVAL = 250
+
+# TRAINING PARAMS
+EPISODES = 1
+MAX_STEPS = 10_000
 
 
 class OBS_SPACE(Enum):
@@ -57,7 +72,7 @@ class Othello():
         env = ResizeObservation(env, (105, 80))
         if self.record_video:
             env = RecordVideo(env, video_folder="./recordings", name_prefix="test-video",\
-                              episode_trigger=lambda x: x % 2 == 0)
+                              episode_trigger=lambda x: x)
         return env
 
     def run(self) -> None:
@@ -83,26 +98,34 @@ class Othello():
 
         self.env.close()
 
-    def run_DQN(self, episodes=5, max_turns=300000) -> None:
+    def train_QLearning(self, episodes=EPISODES, max_steps=MAX_STEPS) -> None:
         # Get initial observation to preprocess and setup Agent
         observation, _ = self.env.reset()
         obs = self.preprocess_obs(observation)
-        # DDQN_Agent = DQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
-        DDQN_Agent = DDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
-        # DDQN_Agent = DuelDQN(env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=0.5, alpha=0.01, gamma=0.9, sync_interval=10000)
+
+        # Q-Learning Agents
+        Agent = DQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = DDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = DuelDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
 
         rewards = []
         loss_record = []
         q_record = []
+        # Repeat (for each episode)
         for e in trange(episodes):
+            # Initalize S
             observation, _ = self.env.reset()
             state = self.preprocess_obs(observation)
             r = 0
-            for t in trange(max_turns):
-                if len(DDQN_Agent.memory) > 10**4:
+            for t in trange(max_steps):
+                if len(Agent.memory) > 10**4:
+                    # Cant store any more experience
                     break
 
-                action = DDQN_Agent.get_action(state)
+                # Choose A from S using policy
+                action = Agent.get_action(state)
+
+                # Take action A, observe R, S'
                 observation, reward, terminated, truncated, _ = self.env.step(action)
                 next_state = self.preprocess_obs(observation)
 
@@ -111,16 +134,28 @@ class Othello():
                 else: 
                     terminate  = 0
                 
-                DDQN_Agent.memory.cache(state.squeeze(), action, reward, next_state.squeeze(), terminate)
+                if self.obs_type == OBS_SPACE.GRAY:
+                    state_mem = state[0]
+                    next_state_mem = next_state[0]
+                else:
+                    state_mem = state.squeeze()
+                    next_state_mem = next_state.squeeze()
+                
+                 # Store step in memory 
+                Agent.memory.cache(state_mem, action, reward, next_state_mem, terminate)
 
-                q_vals, loss = DDQN_Agent.train()
+                # Update Q-Vals
+                # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
+                q_vals, loss = Agent.train()
 
+                # S <- S'
                 state = next_state
                 r += reward
                 if terminated or truncated:
                     break
-            if len(DDQN_Agent.memory) > 10**4:
-                    break
+            if len(Agent.memory) > 10**4:
+                # Cant store any more experience
+                break
             rewards.append(r)
             loss_record.append(loss)
             q_record.append(q_vals)
@@ -128,20 +163,97 @@ class Othello():
         print(f"Rewards: {rewards}")
         print(f"Loss: {loss_record}")
         print(f"Q_record: {q_record}")
-    
-    def evaluate_DDQN_Agent(self):
+
+    def train_SARSA(self, episodes=EPISODES, max_steps=MAX_STEPS) -> None:
+        # Get initial observation to preprocess and setup Agent
+        observation, _ = self.env.reset()
+        obs = self.preprocess_obs(observation)
+
+        # SARSA Agents
+        Agent = SARSA(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = SARSA_DDQN(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN,alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = SARSA_DuelDQN(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN,alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+
+        rewards = []
+        loss_record = []
+        q_record = []
+        # Repeat (for each episode)
+        for e in trange(episodes):
+            # Initalize S
+            observation, _ = self.env.reset()
+            state = self.preprocess_obs(observation)
+            r = 0
+
+            # Choose A from S using policy
+            action = Agent.get_action(state)
+
+            # Repeat (for each step of episode)
+            for t in trange(max_steps):
+                if len(Agent.memory) > 10**4:
+                    # Cant store any more experience
+                    break
+                # Take action A, observe R, S'
+                observation, reward, terminated, truncated, _ = self.env.step(action)
+                next_state = self.preprocess_obs(observation)
+
+                if terminated or truncated: 
+                    terminate = 1
+                else: 
+                    terminate  = 0
+
+                # Choose A' from S' using policy
+                next_action = Agent.get_action(next_state)  # Get next action for SARSA
+                
+                if self.obs_type == OBS_SPACE.GRAY:
+                    state_mem = state[0]
+                    next_state_mem = next_state[0]
+                else:
+                    state_mem = state.squeeze()
+                    next_state_mem = next_state.squeeze()
+
+                # Store step in memory 
+                Agent.memory.cache(state_mem, action, reward, next_state_mem, terminate, next_action)
+
+                # Update Q-Vals
+                # Q(S,A) <- Q(S,A) + alpha[R + gamma * Q(S',A') - Q(S,A)]
+                q_vals, loss = Agent.train()
+
+                # S <- S', A<- A'
+                state = next_state
+                action = next_action
+
+                r += reward
+                if terminated or truncated:
+                    break
+            if len(Agent.memory) > 10**4:
+                # Cant store any more experience
+                break
+            rewards.append(r)
+            loss_record.append(loss)
+            q_record.append(q_vals)
+        # print(f"Len rewards: {len(rewards)}")
+        print(f"Rewards: {rewards}")
+        print(f"Loss: {loss_record}")
+        print(f"Q_record: {q_record}")        
+
+    def evaluate_QLearning_Agent(self, modelPath:str):
         observation, _ = self.env.reset()
         state = self.preprocess_obs(observation)
         # Make epislon 0 so it always chooses actions learned by the agent
-        Test_DDQN_Agent = DDQN(env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=0, alpha=0.01, gamma=0.9, sync_interval=10000)
-        Test_DDQN_Agent.load_model('./DQN/model_4')
+
+        # Q-Learning Agents
+        # Agent = DQN(agent_type="DQN", env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = DDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        Agent = DuelDQN(agent_type="DQN", env=self.env, state_shape=observation.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+
+        Agent.load_model(modelPath)
 
         if self.record_video:
             self.env.start_video_recorder()
 
         total_reward = 0
         for t in trange(100000):
-            action = Test_DDQN_Agent.get_action(state)
+            action = Agent.get_action(state)
             # print(f"action: {action}")
             next_state, reward, terminated, truncated, info = self.env.step(action)
             next_state = self.preprocess_obs(next_state)
@@ -158,6 +270,38 @@ class Othello():
 
         self.env.close()
 
+    def evaluate_SARSA_Agent(self, modelPath:str):
+        observation, _ = self.env.reset()
+        state = self.preprocess_obs(observation)
+        # Make epislon 0 so it always chooses actions learned by the agent
+
+        # SARSA Agents
+        Agent = SARSA(agent_type="SARSA", env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = SARSA_DDQN(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        # Agent = SARSA_DuelDQN(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        Agent.load_model(modelPath)
+
+        if self.record_video:
+            self.env.start_video_recorder()
+
+        total_reward = 0
+        for t in trange(100000):
+            action = Agent.get_action(state)
+            # print(f"action: {action}")
+            next_state, reward, terminated, truncated, info = self.env.step(action)
+            next_state = self.preprocess_obs(next_state)
+
+            state = next_state
+            total_reward += reward
+
+            if terminated or truncated:
+                break
+        print(f"Reward: {total_reward}")
+
+        if self.record_video:
+            self.env.close_video_recorder()
+
+        self.env.close()
         
     def preprocess_obs(self, obs:np.ndarray) -> np.ndarray:
         """
@@ -183,5 +327,8 @@ class Othello():
         return np.expand_dims(obs_cropped, axis=0)
 
 if __name__ == '__main__':
-    othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, True)
-    othello.run_DQN()
+    othello = Othello(RENDER_MODE.RGB, OBS_SPACE.GRAY, True)
+    othello.train_QLearning()
+    # othello.train_SARSA()
+    
+    # othello.evaluate_SARSA_Agent("./SARSA/20240305-201726_model_17")
