@@ -10,7 +10,7 @@ from mem import ReplayMemory
 from nn import NeuralNet
 
 class DeepAgent():
-    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
+    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
         self.env = env
 
         # The Neural Networks for The main Q network and the target network
@@ -31,6 +31,7 @@ class DeepAgent():
         self.optimizer = optim.AdamW(self.network.parameters(), lr=alpha)
         self.loss_func = loss_func()
         self.sync_interval = sync_interval
+        self.agent_type = agent_type
         
 
     def get_action(self, state:np.ndarray) -> int:
@@ -56,7 +57,7 @@ class DeepAgent():
         return loss.item()
 
     def save_model(self) -> None:
-        torch.save(dict(self.network.state_dict()),(f"./DQN/{time.strftime('%Y%m%d-%H%M%S')}_model_{int(self.step // self.sync_interval)}"))
+        torch.save(dict(self.network.state_dict()),(f"./{self.agent_type}/{time.strftime('%Y%m%d-%H%M%S')}_model_{int(self.step // self.save_interval)}"))
         print(f'DQN Model saved at step: {self.step}')
 
     def load_model(self, model_path:str) -> None:

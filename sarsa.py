@@ -36,8 +36,8 @@ class SARSA(DeepAgent):
 
 class SARSA_DDQN(DeepAgent):
     
-    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
+        super().__init__(agent_type, env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
         self.target_net = NeuralNet(state_shape, num_actions)
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
@@ -77,8 +77,8 @@ class SARSA_DDQN(DeepAgent):
 
 class SARSA_DuelDQN(DeepAgent):
     
-    def __init__(self, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
+        super().__init__(agent_type, env, state_shape, num_actions, epsilon, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
         
         self.value_net = NeuralNet(state_shape, 1)
         self.advantage_net = self.network
