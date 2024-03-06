@@ -6,4 +6,10 @@ recordings/
 
 venv/
 
+Scripts/
+Lib/
+include/
+pyvenv.cfg
+share/
+
 DQN/
