@@ -8,7 +8,7 @@ EPSILON_DECAY_RATE = 0.99
 EPSILON_MIN = 0.01
 ALPHA = 0.01
 GAMMA = 0.9
-SKIP_TRAINING = 1_000
+SKIP_TRAINING = 1_000 # This is memory size. Prime the memory with some inital experiences.
 SAVE_INTERVAL = 500
 SYNC_INTERVAL = 250
 

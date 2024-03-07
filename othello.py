@@ -359,8 +359,8 @@ class Othello():
         if obs.ndim > 2:
             # Crop
             obs_cropped = obs[8:-7, 6:-8, :]
-            plt.imshow(obs_cropped)
-            plt.show()
+            # plt.imshow(obs_cropped)
+            # plt.show()
             # Move color channel in front
             obs_cropped = np.moveaxis(obs_cropped, -1, 0)
         # OBS_TYPE = GRAY
