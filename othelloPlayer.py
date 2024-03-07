@@ -2,6 +2,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import numpy as np
 from othelloUtil import *
+from agent import DeepAgent
 
 class PlayerType(Enum):
     """
@@ -18,7 +19,7 @@ class OthelloPlayer(ABC):
     An abstract class which can be extended to respond to a game state given by othelloGame and select
     a move to perform that othelloGame can execute
     """
-    def __init__(self, playerType:PlayerType, mode:GameMove):
+    def __init__(self, playerType:PlayerType, mode:MoveMode):
         self.type = playerType
         self.mode = mode
 
@@ -49,28 +50,33 @@ class HumanPlayer(OthelloPlayer):
     """
     Human Player to play the game manually using the command line interface (cli)
     """
-    def __init__(self):
-        super().__init__(PlayerType.Human)
+    def __init__(self, mode:MoveMode):
+        super().__init__(PlayerType.Human, mode)
 
+    def selectMove(self, board:np.ndarray, availableMoves:list[GameMove], coords:tuple[int,int]=None) -> GameMove:
+        # Display board for player
+        # print(board)
+        # print(f'coords: {coords}')
+        # print()
 
-    def selectMove(self, board:np.ndarray=None, coords:tuple[int,int]=None, availableMoves:list[GameMove]=None) -> GameMove:
         if len(availableMoves) == 0:
-            print("No moves available")
+            print('No moves available.')
             return None
         
-        print("Please select one of the following available moves:")
-        for i, move in enumerate(availableMoves):
-            print(f"[{i}] {move.name}")
+        if self.mode == MoveMode.FullBoardSelect:
+            print('Please select one of the following available coordinates:')
+            for i, move in enumerate(availableMoves):
+                print(f'[{i}] {move}')
+        else:
+            print('Please select one of the following available moves:')
+            for i, move in enumerate(availableMoves):
+                print(f'[{i}] {move.name}')
 
-        while True:
-            selectedOption = input("Enter the number corresponding to your desired action => ")
-            try:
-                if 0 <= int(selectedOption) < len(availableMoves):
-                    break
-                else: 
-                    print("Invalid option.")
-            except:
-                print("Invalid input. Please enter a valid integer.")
+        # Loop until we get a valid input
+        while (selectedOption := int(input('Enter the number corresponding to your desired action => '))) >= len(availableMoves) \
+            or selectedOption < 0:
+            print('Invalid option.')
+
         return availableMoves[int(selectedOption)]
        
             
@@ -85,16 +91,15 @@ class AgentPlayer(OthelloPlayer):
     """
     An RL Agent Player that plays the game
     """
-    def __init__(self, agent, savedModelPath:str=None):
+    def __init__(self, mode:MoveMode, agent:DeepAgent, savedModelPath:str=None):
         """
         Takes a agent object (waiting on this object)
         savedModelPath will be used to load the model's parameters
         """
-        super().__init__(PlayerType.Agent)
+        super().__init__(PlayerType.Agent, mode)
         self.agent = agent
         if savedModelPath:
             self.agent.load_model()
-
 
     def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves:list[GameMove]) -> GameMove:
         """
@@ -102,7 +107,13 @@ class AgentPlayer(OthelloPlayer):
         Will the agent now take the board (state) and availableMoves?
         get_action should return GameMove
         """
-        return self.agent.get_action(board)
+        action = self.agent.get_action(board)
+        allMoves = getDirectionMoves_8() + [GameMove.PlaceTile]
+        move = allMoves[action]
+        if move not in availableMoves:
+            print(f'Not an available move: {move}')
+            exit(1)
+        return move
 
     def reset(self, score:tuple[int,int]) -> None:
         """
@@ -113,5 +124,5 @@ class AgentPlayer(OthelloPlayer):
 
 if __name__ == "__main__":
     # Just testing inputs work. Can be used to test OthelloGame
-    human = HumanPlayer()
-    human.selectMove(availableMoves=[GameMove.North, GameMove.East, GameMove.West])
+    human = HumanPlayer(MoveMode.Directions8)
+    human.selectMove(board=np.zeros((8,8)), availableMoves=[GameMove.North, GameMove.East, GameMove.West], coords=(3,3))
