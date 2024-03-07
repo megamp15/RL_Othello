@@ -10,19 +10,35 @@ from agent import DeepAgent
 from dqn import DDQN,DQN,DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 
+import time
+from pathlib import Path
+from log import MetricLogger
+
+
+saveDir_logs = Path("logs") / time.strftime('%Y%m%d-%H%M%S')
+saveDir_logs.mkdir(parents=True, exist_ok=True)
+logger = MetricLogger(saveDir_logs)
+
+saveDir_recordings = Path("recordings", exist_ok=True) /  time.strftime('%Y%m%d-%H%M%S')
+# saveDir_recordings.mkdir(parents=True)
+
+saveDir_models = Path("models") / time.strftime('%Y%m%d-%H%M%S')
+saveDir_recordings.mkdir(parents=True, exist_ok=True)
+
+
 # AGENT PARAMS
-EPSILON = .75
-EPSILON_DECAY_RATE = 0.99
-EPSILON_MIN = 0.01
-ALPHA = 0.01
+EPSILON = 1
+EPSILON_DECAY_RATE = 0.99999975
+EPSILON_MIN = 0.1
+ALPHA = 0.01 #0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 1_000
-SAVE_INTERVAL = 500
-SYNC_INTERVAL = 250
+SKIP_TRAINING = 1e5 # The amount of experience to gather before starting to train
+SAVE_INTERVAL = 2e5
+SYNC_INTERVAL = 1e4
 
 # TRAINING PARAMS
-EPISODES = 100
-MAX_STEPS = 1_000
+EPISODES = 15 # Low to test for now
+MAX_STEPS = 10_000
 
 
 class OBS_SPACE(Enum):
@@ -74,8 +90,7 @@ class Othello():
         # Resize obs_space from 210 x 160 -> 105 x 80 to conserve data space but same resolution
         env = ResizeObservation(env, (105, 80))
         if self.record_video:
-            env = RecordVideo(env, video_folder="./recordings", name_prefix="test-video",\
-                              episode_trigger=lambda x: x)
+            env = RecordVideo(env, video_folder=saveDir_recordings, name_prefix="video", episode_trigger=lambda x: x)
         return env
 
     def run(self) -> None:
@@ -144,8 +159,6 @@ class Othello():
         # Agent = DuelDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
 
         rewards = []
-        loss_record = []
-        q_record = []
         # Repeat (for each episode)
         for e in trange(episodes):
             # Initalize S
@@ -153,10 +166,6 @@ class Othello():
             state = self.preprocess_obs(observation)
             r = 0
             for t in trange(max_steps):
-                if len(Agent.memory) > 10**4:
-                    # Cant store any more experience
-                    break
-
                 # Choose A from S using policy
                 action = Agent.get_action(state)
 
@@ -181,23 +190,23 @@ class Othello():
 
                 # Update Q-Vals
                 # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
-                q_vals, loss = Agent.train()
+                q, loss = Agent.train()
+
+                logger.log_step(reward, loss, q)
 
                 # S <- S'
                 state = next_state
                 r += reward
                 if terminated or truncated:
                     break
-            if len(Agent.memory) > 10**4:
-                # Cant store any more experience
-                break
             rewards.append(r)
-            loss_record.append(loss)
-            q_record.append(q_vals)
-        # print(f"Len rewards: {len(rewards)}")
+            logger.log_episode()
+
+            if (e % 5 == 0 or e == EPISODES - 1):
+                logger.record(episode=e, epsilon=Agent.epsilon, step=Agent.step)
+            print(f"Memory Len: {len(Agent.memory)}")
         print(f"Rewards: {rewards}")
-        print(f"Loss: {loss_record}")
-        print(f"Q_record: {q_record}")
+
 
     def train_SARSA(self, episodes=EPISODES, max_steps=MAX_STEPS) -> None:
         # Get initial observation to preprocess and setup Agent
@@ -350,13 +359,15 @@ class Othello():
         if obs.ndim > 2:
             # Crop
             obs_cropped = obs[8:-7, 6:-8, :]
+            plt.imshow(obs_cropped)
+            plt.show()
             # Move color channel in front
             obs_cropped = np.moveaxis(obs_cropped, -1, 0)
         # OBS_TYPE = GRAY
         else:
             # Crop 
             obs_cropped = obs[8:-7, 6:-8]
-            # Add a dimension in front for color channel
+            # Add a dimension in front for gray color channel
             obs_cropped = np.expand_dims(obs_cropped, axis=0)
         # Add another dimension in front for batch size
         retval = np.expand_dims(obs_cropped, axis=0)
@@ -364,6 +375,8 @@ class Othello():
 
 if __name__ == '__main__':
     othello = Othello(RENDER_MODE.RGB, OBS_SPACE.GRAY, True)
+
+    # othello.run()
     othello.train_QLearning()
     # othello.train_SARSA()
     
