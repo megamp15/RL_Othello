@@ -6,6 +6,8 @@ recordings/
 
 venv/
 
+venv_cuda/
+
 Scripts/
 Lib/
 include/
@@ -14,3 +16,7 @@ share/
 
 DQN/
 SARSA/
+
+logs/
+
+recordings_old/
