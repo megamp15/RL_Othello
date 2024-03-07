@@ -8,8 +8,13 @@ venv/
 
 venv_cuda/
 
-DQN/
+Scripts/
+Lib/
+include/
+pyvenv.cfg
+share/
 
+DQN/
 SARSA/
 
 logs/

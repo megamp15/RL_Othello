@@ -16,6 +16,21 @@ class GameMove(Enum):
     SouthWest = 7
     PlaceTile = 8
 
+class MoveMode(Enum):
+    """
+    To select the method by which the player selects a coordinate to place a tile
+    """
+    FullBoardSelect = 1
+    Directions8 = 2
+    Directions4 = 3
+
+def getDirectionMoves_8() -> list[GameMove]:
+    return [GameMove.North,GameMove.South,GameMove.East,GameMove.West,GameMove.NorthEast,GameMove.NorthWest,
+            GameMove.SouthEast,GameMove.SouthWest]
+
+def getDirectionMoves_4() -> list[GameMove]:
+    return [GameMove.North,GameMove.South,GameMove.East,GameMove.West]
+
 def gameMoveToOffset(move:GameMove) -> tuple[int,int]:
     match move:
         case GameMove.North:

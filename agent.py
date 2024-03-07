@@ -5,7 +5,7 @@ import util
 import numpy as np
 import time
 import gymnasium as gym
-from pathlib import Path
+import os
 
 from mem import ReplayMemory
 from nn import NeuralNet
@@ -66,15 +66,12 @@ class DeepAgent():
         return loss.item()
 
     def save_model(self) -> None:
-        saveDir = Path(self.agent_type) / time.strftime('%Y%m%d-%H%M%S')
-        saveDir.mkdir(parents=True)
-        torch.save(
-            dict(model=self.network.state_dict(),
-                 epsilon=self.epsilon
-            ),
-            saveDir/f"model_{int(self.step // self.save_interval)}"
-        )
-        print(f'{self.agent_type} Model saved at step: {self.step}')
+        folder_name = f'./{self.agent_type}'
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+        file_name = f'{time.strftime("%Y%m%d-%H%M%S")}_model_{int(self.step // self.save_interval)}'
+        torch.save(dict(self.network.state_dict()),f'{folder_name}/{file_name}')
+        # print(f'\nDQN Model saved at step: {self.step}')
 
     def load_model(self, model_path:str) -> None:
         data = torch.load(model_path, map_location=self.network.device)

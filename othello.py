@@ -252,7 +252,7 @@ class Othello():
         # Q-Learning Agents
         # Agent = DQN(agent_type="DQN", env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
         # Agent = DDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
-        Agent = DuelDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        Agent = DuelDQN(agent_type="DQN", env=self.env, state_shape=observation.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
 
         Agent.load_model(modelPath)
 
