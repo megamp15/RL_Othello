@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange
 
+from agent import DeepAgent
 from dqn import DDQN,DQN,DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 
@@ -20,8 +21,8 @@ SAVE_INTERVAL = 500
 SYNC_INTERVAL = 250
 
 # TRAINING PARAMS
-EPISODES = 1
-MAX_STEPS = 10_000
+EPISODES = 100
+MAX_STEPS = 1_000
 
 
 class OBS_SPACE(Enum):
@@ -31,7 +32,6 @@ class OBS_SPACE(Enum):
     RGB = "rgb"
     GRAY = "grayscale"
     RAM = "ram"
-
 
 class RENDER_MODE(Enum):
     HUMAN = "human"
@@ -45,11 +45,9 @@ class OBS_SPACE(Enum):
     GRAY = "grayscale"
     RAM = "ram"
 
-
 class RENDER_MODE(Enum):
     HUMAN = "human"
     RGB = "rgb_array"
-
 
 class Othello():
     """
@@ -60,6 +58,11 @@ class Othello():
         self.obs_type = observation_type
         self.record_video = record_video 
         self.env = self.setup_env()
+
+        obs, _ = self.env.reset()
+        obs = self.preprocess_obs(obs)
+        self.state_space = obs.shape
+        self.num_actions = self.env.action_space.n
 
     def setup_env(self) -> gym.Env:
         """
@@ -97,6 +100,38 @@ class Othello():
             self.env.close_video_recorder()
 
         self.env.close()
+    
+    def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+        rewards = []
+        loss_record = []
+        q_record = []
+        for e in trange(n_episodes):
+            raw_obs, _ = self.env.reset()
+            exit = False
+            cumulative_reward = 0
+            step = 0
+            while not exit:
+                step += 1
+                state = self.preprocess_obs(raw_obs)
+
+                action = agent.get_action(state)
+                raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+
+                if terminated or truncated or step >= max_steps:
+                    exit = True
+
+                next_state = self.preprocess_obs(raw_obs)
+
+                q_vals, loss, a_exit = agent.update(state, action, reward, next_state, exit)
+                exit |= a_exit
+
+                cumulative_reward += reward
+            rewards.append(cumulative_reward)
+            loss_record.append(loss)
+            q_record.append(q_vals)
+        print(f"Rewards: {rewards}")
+        print(f"Loss: {loss_record}")
+        print(f"Q_record: {q_record}")
 
     def train_QLearning(self, episodes=EPISODES, max_steps=MAX_STEPS) -> None:
         # Get initial observation to preprocess and setup Agent
@@ -104,7 +139,7 @@ class Othello():
         obs = self.preprocess_obs(observation)
 
         # Q-Learning Agents
-        Agent = DQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
+        Agent = DQN(state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL, max_memory=10_000)
         # Agent = DDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
         # Agent = DuelDQN(agent_type="DQN", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
 
@@ -324,7 +359,8 @@ class Othello():
             # Add a dimension in front for color channel
             obs_cropped = np.expand_dims(obs_cropped, axis=0)
         # Add another dimension in front for batch size
-        return np.expand_dims(obs_cropped, axis=0)
+        retval = np.expand_dims(obs_cropped, axis=0)
+        return retval
 
 if __name__ == '__main__':
     othello = Othello(RENDER_MODE.RGB, OBS_SPACE.GRAY, True)

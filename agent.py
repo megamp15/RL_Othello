@@ -6,16 +6,25 @@ import numpy as np
 import time
 import gymnasium as gym
 import os
+from enum import Enum
+import random
+from abc import ABC, abstractmethod
 
 from mem import ReplayMemory
 from nn import NeuralNet
 
-class DeepAgent():
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        self.env = env
+class AgentType(Enum):
+    DQN = 1
+    SARSA = 2
 
+class DeepAgent(ABC):
+    def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
+                 epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int,
+                 skip_training:int, save_interval:int, max_memory:int, loss_func = nn.MSELoss):
         # The Neural Networks for The main Q network and the target network
         self.network = NeuralNet(state_shape, num_actions)
+        self.num_actions = num_actions
+        self.max_memory = max_memory
 
         # Setup memory for DQN algorithm
         self.memory = ReplayMemory(10**4, 16, self.network.device)
@@ -39,17 +48,37 @@ class DeepAgent():
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
-    def get_action(self, state:np.ndarray) -> int:
+    def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
         self.decay_epsilon()
         # if epsilon=0 then flipCoin returns False, if epsilon=1 then flipCoin returns True
         if util.flipCoin(self.epsilon):
-            action = self.env.action_space.sample()
+            if available_moves != None and isinstance(available_moves,list):
+                action = random.choice(available_moves)
+            else:
+                action = random.randint(0,self.num_actions-1)
         else:
             state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
             q_vals_actions = self.network(state)
             action = torch.argmax(q_vals_actions).item()
         self.step += 1
         return action
+    
+    def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, exit:bool=False) -> tuple:
+        """
+        Updates the Q values based on the next observed state
+        """
+        a_exit = False
+        if len(self.memory) > self.max_memory:
+            a_exit = True
+        self.memory.cache(state[0], action, reward, next_state[0], exit)
+        q_vals, loss = self.train()
+        if len(self.memory) > self.max_memory:
+            a_exit = True
+        return q_vals, loss, a_exit
+    
+    @abstractmethod
+    def train(self) -> tuple:
+        pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
         current_Q = self.network(state)[np.arange(0, self.mem_batch_size), action]  
@@ -63,7 +92,7 @@ class DeepAgent():
         return loss.item()
 
     def save_model(self) -> None:
-        folder_name = f'./{self.agent_type}'
+        folder_name = f'./{self.agent_type.name}'
         if not os.path.exists(folder_name):
             os.mkdir(folder_name)
         file_name = f'{time.strftime("%Y%m%d-%H%M%S")}_model_{int(self.step // self.save_interval)}'

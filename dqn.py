@@ -5,9 +5,19 @@ import gymnasium as gym
 
 from nn import NeuralNet
 
-from agent import DeepAgent
+from agent import DeepAgent, AgentType
 
 class DQN(DeepAgent):
+    """
+    A deep q learning network agent
+    """
+    def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+                 epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+                 max_memory:int, loss_function=nn.MSELoss):
+        super().__init__(AgentType.DQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+                       sync_interval, skip_training, save_interval, max_memory, loss_function)
+        pass
+
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
@@ -34,10 +44,12 @@ class DQN(DeepAgent):
         
         return (q_est.mean().item(), loss)
 
-class DDQN(DeepAgent):
-    
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(agent_type, env, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+class DDQN(DeepAgent):    
+    def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+                 epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+                 max_memory:int, loss_func = nn.MSELoss):
+        super().__init__(AgentType.DQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+                         sync_interval, skip_training, save_interval, max_memory, loss_func)
         self.target_net = NeuralNet(state_shape, num_actions)
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
@@ -78,8 +90,11 @@ class DDQN(DeepAgent):
 
 class DuelDQN(DeepAgent):
     
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(agent_type, env, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+    def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+                 epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+                 max_memory:int, loss_func = nn.MSELoss):
+        super().__init__(AgentType.DQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+                         sync_interval, skip_training, save_interval, max_memory, loss_func)
         
         self.value_net = NeuralNet(state_shape, 1)
         self.advantage_net = self.network
