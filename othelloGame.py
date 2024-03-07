@@ -261,8 +261,6 @@ if __name__ == '__main__':
     player1 = HumanPlayer(MoveMode.Directions8)
     player2 = HumanPlayer(MoveMode.FullBoardSelect)
     game = Othello(player1,player2,(8,8))
-    # game.findFlippableTiles((2,4),PlayerTurn.Player1)
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
-    # game.takeTurn()
     game.startGame()

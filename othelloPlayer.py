@@ -54,11 +54,6 @@ class HumanPlayer(OthelloPlayer):
         super().__init__(PlayerType.Human, mode)
 
     def selectMove(self, board:np.ndarray, availableMoves:list[GameMove], coords:tuple[int,int]=None) -> GameMove:
-        # Display board for player
-        # print(board)
-        # print(f'coords: {coords}')
-        # print()
-
         if len(availableMoves) == 0:
             print('No moves available.')
             return None
@@ -78,13 +73,19 @@ class HumanPlayer(OthelloPlayer):
             print('Invalid option.')
 
         return availableMoves[int(selectedOption)]
-       
             
     def reset(self, score:tuple[int,int]) -> None:
         """
-        Not exactly sure a reset is needed for players at this moment.
+        Display the score and say who won.
         """
-        pass
+        if score[0] > score[1]:
+            print('Game over. Player 1 won.')
+        elif score[0] < score[1]:
+            print('Game over. Player 2 won.')
+        else:
+            print('Game over. Players tied!')
+        print(f'Player 1: {score[0]}')
+        print(f'Player 2: {score[1]}')
 
     
 class AgentPlayer(OthelloPlayer):
@@ -101,7 +102,7 @@ class AgentPlayer(OthelloPlayer):
         if savedModelPath:
             self.agent.load_model()
 
-    def selectMove(self, board:np.ndarray, coords:tuple[int,int], availableMoves:list[GameMove]) -> GameMove:
+    def selectMove(self, board:np.ndarray, availableMoves:list[GameMove], coords:tuple[int,int]) -> GameMove:
         """
         Calls the agents action method. 
         Will the agent now take the board (state) and availableMoves?
@@ -117,7 +118,7 @@ class AgentPlayer(OthelloPlayer):
 
     def reset(self, score:tuple[int,int]) -> None:
         """
-        Not exactly sure a reset is needed for players at this moment.
+        Somehow tell the agent that the game is over, who won, and what the score is (if applicable)
         """
         pass
 
