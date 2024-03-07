@@ -2,6 +2,7 @@ import numpy as np
 import time, datetime
 import matplotlib.pyplot as plt
 
+# Using this logger class from https://pytorch.org/tutorials/intermediate/mario_rl_tutorial.html
 
 class MetricLogger:
     def __init__(self, save_dir):
