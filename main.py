@@ -3,14 +3,29 @@ from dqn import DDQN,DQN,DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 # TODO: Might want to setup command line arguments
 
-EPSILON = .75
-EPSILON_DECAY_RATE = 0.99
-EPSILON_MIN = 0.01
-ALPHA = 0.01
+# EPSILON = .75
+# EPSILON_DECAY_RATE = 0.99
+# EPSILON_MIN = 0.01
+# ALPHA = 0.01
+# GAMMA = 0.9
+# SKIP_TRAINING = 1_000 # This is memory size. Prime the memory with some inital experiences.
+# SAVE_INTERVAL = 500
+# SYNC_INTERVAL = 250
+
+# AGENT PARAMS
+EPSILON = 1
+EPSILON_DECAY_RATE = 0.99999975
+EPSILON_MIN = 0.1
+ALPHA = 0.01 #0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 1_000 # This is memory size. Prime the memory with some inital experiences.
-SAVE_INTERVAL = 500
-SYNC_INTERVAL = 250
+SKIP_TRAINING = 1e4 # This is memory size. Prime the memory with some inital experiences.
+SAVE_INTERVAL = 1e1
+SYNC_INTERVAL = 1e3
+
+# TRAINING PARAMS
+EPISODES = 15 # Low to test for now
+MAX_STEPS = 10_000
+
 
 if __name__ == '__main__':
     """
@@ -20,15 +35,8 @@ if __name__ == '__main__':
     """
     othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
 
-    # Uncomment the following to run just the base othello
     dqn = DQN(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE,
               epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING,
               save_interval=SAVE_INTERVAL, max_memory=10_000)
 
-    othello.train_agent(dqn, 10, 1000)
-    # othello.run()
-
-    # To run a test of the DQN algorithm based on the evaluate method: https://www.kaggle.com/code/pedrobarrios/proyecto2-yandexdataschool-week4-rlataribreakout
-    # othello.run_DQN()
-
-    # othello.evaluate_DQN_Agent()
+    othello.train_agent(agent=dqn, n_episodes=EPISODES, max_steps=MAX_STEPS)

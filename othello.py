@@ -137,13 +137,21 @@ class Othello():
 
                 next_state = self.preprocess_obs(raw_obs)
 
-                q_vals, loss, a_exit = agent.update(state, action, reward, next_state, exit)
+                q, loss, a_exit = agent.update(state, action, reward, next_state, exit)
+
+                logger.log_step(reward, loss, q)
+
                 exit |= a_exit
 
                 cumulative_reward += reward
             rewards.append(cumulative_reward)
             loss_record.append(loss)
-            q_record.append(q_vals)
+            q_record.append(q)
+            logger.log_episode()
+
+            # if (e % 1 == 0 or e == EPISODES - 1):
+            logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
+            
         print(f"Rewards: {rewards}")
         print(f"Loss: {loss_record}")
         print(f"Q_record: {q_record}")
