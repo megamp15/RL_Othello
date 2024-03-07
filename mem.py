@@ -9,7 +9,7 @@ class ReplayMemory():
     """
     def __init__(self, capacity, batch_size, device):
         self.device = device
-        self.memory = TensorDictReplayBuffer(storage=LazyMemmapStorage(capacity, device=torch.device(device)))
+        self.memory = TensorDictReplayBuffer(storage=LazyMemmapStorage(capacity, device=device))
         self.batch_size = batch_size
 
     def cache(self, state:torch.Tensor, action:int, reward:int, next_state:torch.Tensor, terminate:int, next_action:int=None):
@@ -33,14 +33,14 @@ class ReplayMemory():
         """
         samples = self.memory.sample(self.batch_size).to(self.device)
         state, action, reward, next_state, terminate = (samples.get(key) for key in ("state", "action", "reward", "next_state", "terminate"))
-        state=state.clone().detach().float()  
-        action=action.clone().detach().long() 
-        reward=reward.clone().detach().float() 
-        next_state=next_state.clone().detach().float() 
-        terminate=terminate.clone().detach().float() 
+        state=state.clone().detach().float().to(self.device)  
+        action=action.clone().detach().long().to(self.device) 
+        reward=reward.clone().detach().float().to(self.device) 
+        next_state=next_state.clone().detach().float().to(self.device) 
+        terminate=terminate.clone().detach().float().to(self.device) 
 
         if "next_action" in samples.keys():
-            next_action = samples["next_action"].clone().detach().long() 
+            next_action = samples["next_action"].clone().detach().long().to(self.device) 
             return state, action.squeeze(), reward.squeeze(), next_state, next_action.squeeze(), terminate.squeeze()
 
         return state, action.squeeze(), reward.squeeze(), next_state, terminate.squeeze()

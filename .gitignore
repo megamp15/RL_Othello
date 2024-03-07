@@ -6,6 +6,12 @@ recordings/
 
 venv/
 
+venv_cuda/
+
 DQN/
 
 SARSA/
+
+logs/
+
+recordings_old/
