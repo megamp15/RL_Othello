@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 
 from mem import ReplayMemory
 from neuralNet import BaseNeuralNet
+from othelloUtil import *
 
 
 class AgentType(Enum):
@@ -91,12 +92,30 @@ class DeepAgent(ABC):
         else:
             state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
             q_vals_actions = self.network(state)
+            q_vals_actions = self.clamp_illegal_actions(q_vals_actions,available_moves)
             action = torch.argmax(q_vals_actions).item()
+            action = getCoordsFromIndex(action)
 
         self.decay_epsilon()
         self.step += 1
 
         return action
+    
+    def clamp_illegal_actions(self,q_vals_actions:torch.tensor,available_moves:list)->None:
+        mask = torch.ones_like(q_vals_actions) * float('-inf')
+        #print("clamp_illegal_actions")
+        #print(q_vals_actions)
+        #print(available_moves)
+        #print(mask)
+        #print(mask.shape)
+        #print(q_vals_actions.shape)
+        indices = [getIndexFromCoords(m) for m in available_moves]
+        #print(indices)
+        mask[0,indices] = 0
+        #print(mask)
+        #print(mask + q_vals_actions)
+        #sys.exit(0)
+        return mask + q_vals_actions
     
     def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, exit:bool=False) -> tuple:
         """

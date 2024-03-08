@@ -241,7 +241,7 @@ class Othello():
             board = self.board
             if self.activePlayer == PlayerTurn.Player2:
                 board = -board
-            coords = current_player.selectMove(board, availableMoves)
+            coords = current_player.selectMoveFullBoardSelect(board, availableMoves)
         else:
             coords = (self.board_size-[1,1])//2
             print(f"Current Position: {coords}")
@@ -266,8 +266,8 @@ if __name__ == '__main__':
     player2 = AgentPlayer(mode,agent=None)
     game = Othello(player1,player2,(8,8))
     #state_shape = (1,1,8,8)
-    state_shape = (1,1,10,10)
-    
+    #state_shape = (1,1,10,10)
+    #Params stolen from othello.py to get it running.
     # AGENT PARAMS
     EPSILON = .75
     EPSILON_DECAY_RATE = 0.99
@@ -283,10 +283,25 @@ if __name__ == '__main__':
     MAX_STEPS = 10_000
 
     num_actions=60
-    p1_dqn = DQN(agent_type="DQN", env=game, state_shape=state_shape, net_type=StateNeuralNet, num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL)
-    p2_dqn = DQN(agent_type="DQN", env=game, state_shape=state_shape, net_type=StateNeuralNet,num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL)
-    #p1.set_state_shape(board_size)
-    #p2.set_state_shape(board_size)
+    
+    # Define agent parameters once so it's not quite so verbose
+    params = {'state_shape' : environment.state_space,
+              'num_actions' : environment.num_actions,
+              'epsilon' : EPSILON,
+              'epsilon_decay_rate' : EPSILON_DECAY_RATE,
+              'epsilon_min' : EPSILON_MIN,
+              'alpha' : ALPHA,
+              'gamma' : GAMMA,
+              'sync_interval' : SYNC_INTERVAL,
+              'skip_training' : SKIP_TRAINING,
+              'save_interval' : SAVE_INTERVAL,
+              'max_memory' : MEMORY_CAPACITY,
+              'save_path' : save_model_path
+              }
+    p1_dqn = DQN(env=game, state_shape=state_shape, net_type=StateNeuralNet, num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL,max_memory=10_000,save_path='./DQN/test.junk')
+    p2_dqn = DQN(env=game, state_shape=state_shape, net_type=StateNeuralNet,num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL,max_memory=10_000,save_path='./DQN/test.junk')
+    player1.setAgent(p1_dqn)    
+    player2.setAgent(p2_dqn)
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     game.startGame()

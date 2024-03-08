@@ -101,6 +101,12 @@ class AgentPlayer(OthelloPlayer):
         self.agent = agent
         if savedModelPath:
             self.agent.load_model()
+            
+    def setAgent(self,agent,savedModelPath:str=None):
+        self.agent = agent
+        if savedModelPath:
+            self.agent.load_model()
+            
 
     def selectMove(self, board:np.ndarray, availableMoves:list[GameMove], coords:tuple[int,int]) -> GameMove:
         """
@@ -115,6 +121,16 @@ class AgentPlayer(OthelloPlayer):
             print(f'Not an available move: {move}')
             exit(1)
         return move
+    
+    def selectMoveFullBoardSelect(self, board:np.ndarray, availableMoves:list[tuple[int,int]]) -> GameMove:
+        """
+        Calls the agents action method. 
+        Will the agent now take the board (state) and availableMoves?
+        get_action should return GameMove
+        """
+        
+        action = self.agent.get_action(board,availableMoves)
+        return action
 
     def reset(self, score:tuple[int,int]) -> None:
         """
