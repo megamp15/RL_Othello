@@ -14,12 +14,12 @@ from mem import ReplayMemory
 from nn import NeuralNet
 
 class AgentType(Enum):
-    DQN = 1
-    DDQN = 2
-    DuelDQN = 3
-    SARSA = 4
-    DSARSA = 5
-    DuelSARSA = 6
+    DQN = "DQN"
+    DDQN = "DDQN"
+    DUELDQN = "DUELDQN"
+    SARSA = "SARSA"
+    DSARSA = "DSARSA"
+    DUELSARSA = "DUELSARSA"
 
 class DeepAgent(ABC):
     def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
@@ -100,7 +100,7 @@ class DeepAgent(ABC):
         return loss.item()
 
     def save_model(self, save_path: str) -> None:
-        file_name = f'{self.agent_type}_model_{int(self.step // self.save_interval)}'
+        file_name = f'{self.agent_type.value}_model_{int(self.step // self.save_interval)}'
         torch.save(dict(self.network.state_dict()),f'{save_path}/{file_name}')
         # print(f'\nDQN Model saved at step: {self.step}')
 

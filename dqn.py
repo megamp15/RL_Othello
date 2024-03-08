@@ -93,7 +93,7 @@ class DuelDQN(DeepAgent):
     def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
                  epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
                  max_memory:int, loss_func = nn.MSELoss):
-        super().__init__(AgentType.DuelDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+        super().__init__(AgentType.DUELDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
                          sync_interval, skip_training, save_interval, max_memory, loss_func)
         
         self.value_net = NeuralNet(state_shape, 1)
