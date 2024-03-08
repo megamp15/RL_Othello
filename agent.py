@@ -1,3 +1,5 @@
+from typing import TypedDict
+from typing_extensions import Unpack, Required, NotRequired
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -20,37 +22,55 @@ class AgentType(Enum):
     DSARSA = "DSARSA"
     DUELSARSA = "DUELSARSA"
 
+class AgentParams(TypedDict):
+    state_shape : tuple[int,int,int,int]
+    num_actions : int
+    epsilon : float
+    epsilon_decay_rate : float
+    epsilon_min : float
+    alpha : float
+    gamma : float
+    sync_interval : int
+    skip_training : int
+    save_interval : int
+    max_memory : int
+    save_path : NotRequired[str]
+
 class DeepAgent(ABC):
-    def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
-                 epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int,
-                 skip_training:int, save_interval:int, max_memory:int, loss_func = nn.MSELoss):
+    # def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
+    #              epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int,
+    #              skip_training:int, save_interval:int, max_memory:int, loss_func = nn.MSELoss):
+    def __init__(self, agent_type:AgentType, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
         # The Neural Networks for The main Q network and the target network
-        self.network = NeuralNet(state_shape, num_actions)
-        self.num_actions = num_actions
-        self.max_memory = max_memory
+        self.network = NeuralNet(kwargs['state_shape'], kwargs['num_actions'])
+        self.num_actions = kwargs['num_actions']
+        self.max_memory = kwargs['max_memory']
+
+        # Save directory for model files
+        self.save_path = kwargs['save_path']
 
         # Setup memory for DQN algorithm
         self.memory = ReplayMemory(self.max_memory, 32, self.network.device)
         self.mem_batch_size = self.memory.batch_size
 
-        self.step = 0 # Current Step of the agent
-        
+        # Current Step of the agent
+        self.step = 0
 
         # Hyperparameters
-        self.epsilon = epsilon
-        self.epsilon_decay_rate = epsilon_decay_rate
-        self.epsilon_min = epsilon_min
-        self.gamma = gamma
+        self.epsilon = kwargs['epsilon']
+        self.epsilon_decay_rate = kwargs['epsilon_decay_rate']
+        self.epsilon_min = kwargs['epsilon_min']
+        self.gamma = kwargs['gamma']
         
-        self.skip_training = skip_training # Skip the first n amount of training steps to cache experience in memory
-        self.save_interval = save_interval # Save the model every n steps
+        self.skip_training = kwargs['skip_training'] # Skip the first n amount of training steps to cache experience in memory
+        self.save_interval = kwargs['save_interval'] # Save the model every n steps
 
-        self.optimizer = optim.AdamW(self.network.parameters(), lr=alpha)
-        self.loss_func = loss_func()
-        self.sync_interval = sync_interval
+        self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'])
+        self.loss_func = loss_func
+        self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
     
-    def decay_epsilon(self):
+    def decay_epsilon(self) -> None:
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
@@ -98,9 +118,9 @@ class DeepAgent(ABC):
         self.optimizer.step()
         return loss.item()
 
-    def save_model(self, save_path: str) -> None:
+    def save_model(self) -> None:
         file_name = f'{self.agent_type.value}_model_{int(self.step // self.save_interval)}'
-        torch.save(dict(self.network.state_dict()),f'{save_path}/{file_name}')
+        torch.save(dict(self.network.state_dict()),f'{self.save_path}/{file_name}')
         # print(f'\nDQN Model saved at step: {self.step}')
 
     def load_model(self, model_path:str) -> None:

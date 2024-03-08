@@ -36,22 +36,35 @@ if __name__ == '__main__':
     """
     othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
     othello2 = Othello2(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
-    # Q-Learning Agents
 
-    dqn = DQN(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE,
-              epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, max_memory=MEMORY_CAPACITY)
-    ddqn = DDQN(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE,
-              epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, max_memory=MEMORY_CAPACITY)
-    dueldqn = DuelDQN(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE,
-              epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, max_memory=MEMORY_CAPACITY)
+    environment = othello
+
+    # Define agent parameters once so it's not quite so verbose
+    params = {'state_shape' : environment.state_space,
+              'num_actions' : environment.num_actions,
+              'epsilon' : EPSILON,
+              'epsilon_decay_rate' : EPSILON_DECAY_RATE,
+              'epsilon_min' : EPSILON_MIN,
+              'alpha' : ALPHA,
+              'gamma' : GAMMA,
+              'sync_interval' : SYNC_INTERVAL,
+              'skip_training' : SKIP_TRAINING,
+              'save_interval' : SAVE_INTERVAL,
+              'max_memory' : MEMORY_CAPACITY,
+              'save_path' : save_model_path
+              }
+
+    # Q-Learning Agents
+    dqn = DQN(**params)
+    ddqn = DDQN(**params)
+    dueldqn = DuelDQN(**params)
 
     # SARSA Agents
-    sarsa = SARSA(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE,
-              epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, max_memory=MEMORY_CAPACITY)
-    dsarsa = SARSA_DDQN(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, 
-              epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, max_memory=MEMORY_CAPACITY)
-    duelsarsa = SARSA_DuelDQN(state_shape=othello.state_space, num_actions=othello.num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, 
-              epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, sync_interval=SYNC_INTERVAL, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, max_memory=MEMORY_CAPACITY)
+    sarsa = SARSA(**params)
+    dsarsa = SARSA_DDQN(**params)
+    duelsarsa = SARSA_DuelDQN(**params)
+
+    environment.train_agent(dqn, 1, 10)
 
     # Check the state of othello after n_steps
     # othello2.run(n_steps=1000)
@@ -59,4 +72,4 @@ if __name__ == '__main__':
     # othello.train_agent(agent=dqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
 
     # othello2.train_QLearning(save_path=save_model_path, agent=ddqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
-    othello2.train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    # othello2.train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
