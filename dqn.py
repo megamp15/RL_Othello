@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from neuralNet import BaseNeuralNet
 
 from agent import DeepAgent, AgentType, AgentParams
 
