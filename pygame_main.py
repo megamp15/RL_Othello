@@ -1,7 +1,5 @@
 from othello import Othello, RENDER_MODE, OBS_SPACE
 
-from othello2 import Othello2
-
 from othelloGame import Othello as OthelloGame
 from othelloPlayer import AgentPlayer
 from neuralNet import StateNeuralNet
