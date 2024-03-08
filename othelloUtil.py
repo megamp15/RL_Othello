@@ -53,6 +53,12 @@ def gameMoveToOffset(move:GameMove) -> tuple[int,int]:
             raise FileNotFoundError
     return offset
 
+def getCoordsFromIndex(index:int) ->tuple[int,int]:
+    return (index//8,index%8)
+
+def getIndexFromCoords(coords:tuple[int,int]) ->int:
+    return coords[1] + 8 * coords[0]
+
 def clear():
     # for windows
     if name == 'nt':
