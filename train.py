@@ -126,3 +126,72 @@ def train_SARSA(environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=10
     print(f"Rewards: {rewards}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")  
+    
+    
+def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+    '''
+    Train function for the othelloGame environment
+
+    Parameters
+    ----------
+    environment : othelloGame
+        DESCRIPTION.
+    agent : DeepAgent
+        DESCRIPTION.
+    n_episodes : int, optional
+        DESCRIPTION. The default is 1.
+    max_steps : int, optional
+        DESCRIPTION. The default is 100.
+
+    Returns
+    -------
+    None
+    '''
+    #Set both players to be the same agent
+    player1 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
+    player2 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
+    environment.player1 = player1
+    environment.player2 = player2
+    
+    rewards = []
+    loss_record = []
+    q_record = []
+    for e in trange(n_episodes):
+        #start episode
+        self.resetBoard()
+        episode_over = False
+        cumulative_reward_p1 = 0
+        cumulative_reward_p2 = 0
+        step = 0
+        while not episode_over:
+            step += 1
+            state = self.board
+
+            action = agent.get_action(state)
+            raw_obs, reward, terminated, truncated, _ = self.step(action)
+
+            if terminated or truncated or step >= max_steps:
+                episode_over = True
+
+            next_state = self.preprocess_obs(raw_obs)
+
+            q, loss, a_exit = agent.update(state, action, reward, next_state, exit)
+
+            logger.log_step(reward, loss, q)
+
+            episode_over |= a_exit
+
+            cumulative_reward += reward
+            self.activePlayer = self.flipTurn(self.activePlayer)
+            
+        rewards.append(cumulative_reward)
+        loss_record.append(loss)
+        q_record.append(q)
+        logger.log_episode()
+
+        # if (e % 1 == 0 or e == EPISODES - 1):
+        logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
+
+    print(f"Rewards: {rewards}")
+    print(f"Loss: {loss_record}")
+    print(f"Q_record: {q_record}")

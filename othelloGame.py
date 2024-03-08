@@ -271,68 +271,6 @@ class Othello():
         terminated = self.checkGameOver()
         return(self.board,reward,terminated,False)
         
-    def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
-        '''
-            def startGame(self) -> None:
-                """
-                Starts a new game of Othello
-                """
-                self.resetBoard()
-                print("Game started.")
-                while not self.checkGameOver():
-                    self.takeTurn()
-                    self.activePlayer = self.flipTurn(self.activePlayer)
-                    # clear() # Clears out the cli 
-                self.resetPlayer()
-        '''
-        #Set both players to be the same agent
-        player1 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
-        player2 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
-        self.player1 = player1
-        self.player2 = player2
-        
-        rewards = []
-        loss_record = []
-        q_record = []
-        for e in trange(n_episodes):
-            #start episode
-            self.resetBoard()
-            episode_over = False
-            cumulative_reward_p1 = 0
-            cumulative_reward_p2 = 0
-            step = 0
-            while not episode_over:
-                step += 1
-                state = self.board
-
-                action = agent.get_action(state)
-                raw_obs, reward, terminated, truncated, _ = self.step(action)
-
-                if terminated or truncated or step >= max_steps:
-                    episode_over = True
-
-                next_state = self.preprocess_obs(raw_obs)
-
-                q, loss, a_exit = agent.update(state, action, reward, next_state, exit)
-
-                logger.log_step(reward, loss, q)
-
-                episode_over |= a_exit
-
-                cumulative_reward += reward
-                self.activePlayer = self.flipTurn(self.activePlayer)
-                
-            rewards.append(cumulative_reward)
-            loss_record.append(loss)
-            q_record.append(q)
-            logger.log_episode()
-
-            # if (e % 1 == 0 or e == EPISODES - 1):
-            logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
-
-        print(f"Rewards: {rewards}")
-        print(f"Loss: {loss_record}")
-        print(f"Q_record: {q_record}")
 
 if __name__ == '__main__':
     mode = MoveMode.FullBoardSelect
