@@ -25,7 +25,7 @@ class ReplayMemory():
             "terminate": torch.tensor([terminate], dtype=torch.float, device=self.device)
         }, batch_size=[])
         if next_action is not None: 
-            data["next_action"] = torch.tensor([next_action], device=self.device)
+            data["next_action"] = torch.tensor([next_action], dtype=torch.long, device=self.device)
         self.memory.add(data)
 
     def recall(self):

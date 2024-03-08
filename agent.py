@@ -63,7 +63,7 @@ class DeepAgent(ABC):
         self.save_interval = kwargs['save_interval'] # Save the model every n steps
 
         self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'])
-        self.loss_func = loss_func
+        self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
     
@@ -101,7 +101,7 @@ class DeepAgent(ABC):
         return q_vals, loss, a_exit
     
     @abstractmethod
-    def train(self, save_path:str) -> tuple:
+    def train(self) -> tuple:
         pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:

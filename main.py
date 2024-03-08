@@ -18,15 +18,15 @@ EPSILON_DECAY_RATE = 0.99999975
 EPSILON_MIN = 0.1
 ALPHA = 0.01 #0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 1_000 # This is memory size. Prime the memory with some inital experiences.
-SAVE_INTERVAL = 1_000
-SYNC_INTERVAL = 250
+SKIP_TRAINING = 20_000 
+SAVE_INTERVAL = 50_000
+SYNC_INTERVAL = 10_000
 
 # TRAINING PARAMS
-EPISODES = 50 # Low to test for now
-MAX_STEPS = 2_000
+EPISODES = 1_000
+MAX_STEPS = 8_000
 
-MEMORY_CAPACITY = 10_000
+MEMORY_CAPACITY = 100_000
 
 if __name__ == '__main__':
     """
@@ -71,5 +71,5 @@ if __name__ == '__main__':
 
     # othello.train_agent(agent=dqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
 
-    # othello2.train_QLearning(save_path=save_model_path, agent=ddqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
-    # othello2.train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    othello2.train_QLearning(agent=dqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    # othello2.train_SARSA(agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)

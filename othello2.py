@@ -139,7 +139,7 @@ class Othello2():
         print(f"Loss: {loss_record}")
         print(f"Q_record: {q_record}")
 
-    def train_QLearning(self, save_path:str, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+    def train_QLearning(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
         rewards = []
         loss_record = []
         q_record = []
@@ -172,7 +172,7 @@ class Othello2():
 
                 # Update Q-Vals
                 # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
-                q, loss = agent.train(save_path)
+                q, loss = agent.train()
 
                 logger.log_step(reward, loss, q)
 
@@ -194,7 +194,7 @@ class Othello2():
         print(f"Q_record: {q_record}")
 
 
-    def train_SARSA(self, save_path:str, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+    def train_SARSA(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
         rewards = []
         loss_record = []
         q_record = []
@@ -232,7 +232,7 @@ class Othello2():
 
                 # Update Q-Vals
                 # Q(S,A) <- Q(S,A) + alpha[R + gamma * Q(S',A') - Q(S,A)]
-                q, loss = agent.train(save_path)
+                q, loss = agent.train()
 
                 logger.log_step(reward, loss, q)
 
