@@ -15,7 +15,11 @@ from nn import NeuralNet
 
 class AgentType(Enum):
     DQN = 1
-    SARSA = 2
+    DDQN = 2
+    DuelDQN = 3
+    SARSA = 4
+    DSARSA = 5
+    DuelSARSA = 6
 
 class DeepAgent(ABC):
     def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
@@ -27,7 +31,7 @@ class DeepAgent(ABC):
         self.max_memory = max_memory
 
         # Setup memory for DQN algorithm
-        self.memory = ReplayMemory(skip_training, 32, self.network.device)
+        self.memory = ReplayMemory(self.max_memory, 32, self.network.device)
         self.mem_batch_size = self.memory.batch_size
 
         self.step = 0 # Current Step of the agent
@@ -81,7 +85,7 @@ class DeepAgent(ABC):
         return q_vals, loss, a_exit
     
     @abstractmethod
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
@@ -95,12 +99,9 @@ class DeepAgent(ABC):
         self.optimizer.step()
         return loss.item()
 
-    def save_model(self) -> None:
-        folder_name = f'./{self.agent_type.name}'
-        if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
-        file_name = f'{time.strftime("%Y%m%d-%H%M%S")}_model_{int(self.step // self.save_interval)}'
-        torch.save(dict(self.network.state_dict()),f'{folder_name}/{file_name}')
+    def save_model(self, save_path: str) -> None:
+        file_name = f'{self.agent_type}_model_{int(self.step // self.save_interval)}'
+        torch.save(dict(self.network.state_dict()),f'{save_path}/{file_name}')
         # print(f'\nDQN Model saved at step: {self.step}')
 
     def load_model(self, model_path:str) -> None:

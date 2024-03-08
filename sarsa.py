@@ -5,10 +5,18 @@ import gymnasium as gym
 
 from nn import NeuralNet
 
-from agent import DeepAgent
+from agent import DeepAgent, AgentType
 
 class SARSA(DeepAgent):
-    
+    """
+    A deep sarsa learning network agent
+    """
+    def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+                 epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+                 max_memory:int, loss_function=nn.MSELoss):
+        super().__init__(AgentType.SARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+                       sync_interval, skip_training, save_interval, max_memory, loss_function)
+
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
@@ -18,14 +26,14 @@ class SARSA(DeepAgent):
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
     
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         """
         Model learning/optimization
         """
         if self.step < self.skip_training:
             return None, None
         if self.step % self.save_interval == 0: # Save every n eps
-            self.save_model()
+            self.save_model(save_path)
         
         state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
@@ -36,8 +44,11 @@ class SARSA(DeepAgent):
 
 class SARSA_DDQN(DeepAgent):
     
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(agent_type, env, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+    def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+                 epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+                 max_memory:int, loss_function=nn.MSELoss):
+        super().__init__(AgentType.DSARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+                       sync_interval, skip_training, save_interval, max_memory, loss_function)
         self.target_net = NeuralNet(state_shape, num_actions)
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
@@ -57,7 +68,7 @@ class SARSA_DDQN(DeepAgent):
     def sync_w_to_target_net(self) -> None:
         self.target_net.load_state_dict(self.network.state_dict())
         
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         """
         Model learning/optimization
         """
@@ -77,8 +88,11 @@ class SARSA_DDQN(DeepAgent):
 
 class SARSA_DuelDQN(DeepAgent):
     
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(agent_type, env, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+    def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+                 epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+                 max_memory:int, loss_function=nn.MSELoss):
+        super().__init__(AgentType.DuelSARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+                       sync_interval, skip_training, save_interval, max_memory, loss_function)
         
         self.value_net = NeuralNet(state_shape, 1)
         self.advantage_net = self.network
@@ -98,14 +112,14 @@ class SARSA_DuelDQN(DeepAgent):
         return (reward + self.gamma * next_Q*not_done).float()
 
     
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         """
         Model learning/optimization
         """
         if self.step < self.skip_training:
             return None, None
         if self.step % self.save_interval == 0: # Save every n eps
-            self.save_model()
+            self.save_model(save_path)
         
         state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)

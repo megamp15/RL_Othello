@@ -28,14 +28,14 @@ class DQN(DeepAgent):
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
     
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         """
         Model learning/optimization
         """
         if self.step < self.skip_training:
             return None, None
         if self.step % self.save_interval == 0: # Save every n eps
-            self.save_model()
+            self.save_model(save_path)
         
         state, action, reward, next_state, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
@@ -48,7 +48,7 @@ class DDQN(DeepAgent):
     def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
                  epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
                  max_memory:int, loss_func = nn.MSELoss):
-        super().__init__(AgentType.DQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+        super().__init__(AgentType.DDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
                          sync_interval, skip_training, save_interval, max_memory, loss_func)
         self.target_net = NeuralNet(state_shape, num_actions)
         # Copy inital weights from Q Network into the target network
@@ -70,7 +70,7 @@ class DDQN(DeepAgent):
     def sync_w_to_target_net(self) -> None:
         self.target_net.load_state_dict(self.network.state_dict())
         
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         """
         Model learning/optimization
         """
@@ -79,7 +79,7 @@ class DDQN(DeepAgent):
         if self.step % self.sync_interval == 0:
             self.sync_w_to_target_net()
         if self.step % self.save_interval == 0: # Save every n eps
-            self.save_model()
+            self.save_model(save_path)
         
         state, action, reward, next_state, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
@@ -93,7 +93,7 @@ class DuelDQN(DeepAgent):
     def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
                  epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
                  max_memory:int, loss_func = nn.MSELoss):
-        super().__init__(AgentType.DQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+        super().__init__(AgentType.DuelDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
                          sync_interval, skip_training, save_interval, max_memory, loss_func)
         
         self.value_net = NeuralNet(state_shape, 1)
@@ -114,14 +114,14 @@ class DuelDQN(DeepAgent):
         return (reward + self.gamma * next_Q*not_done).float()
 
     
-    def train(self) -> tuple:
+    def train(self, save_path:str) -> tuple:
         """
         Model learning/optimization
         """
         if self.step < self.skip_training:
             return None, None
         if self.step % self.save_interval == 0: # Save every n eps
-            self.save_model()
+            self.save_model(save_path)
         
         state, action, reward, next_state, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
