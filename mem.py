@@ -33,12 +33,13 @@ class ReplayMemory():
         Retrieve experience from memory
         """
         samples = self.memory.sample(self.batch_size).to(self.device)
-        state, action, reward, next_state, terminate = (samples.get(key) for key in ("state", "action", "reward", "next_state", "terminate"))
-        state=state.detach().clone()
-        action=action.detach().clone()
-        reward=reward.detach().clone() 
-        next_state=next_state.detach().clone()
-        terminate=terminate.detach().clone()
+        state, action, reward, next_state, terminate = (samples.get(key).detach().clone() for key in \
+                                                        ("state", "action", "reward", "next_state", "terminate"))
+        # state=state.detach().clone()
+        # action=action.detach().clone()
+        # reward=reward.detach().clone() 
+        # next_state=next_state.detach().clone()
+        # terminate=terminate.detach().clone()
         if "next_action" in samples.keys():
             next_action = samples["next_action"].detach().clone()
             return state, action.squeeze(), reward.squeeze(), next_state, next_action.squeeze(), terminate.squeeze()

@@ -3,9 +3,9 @@
 __pycache__/*
 
 recordings/
+recordings_old/
 
 venv/
-
 venv_cuda/
 
 Scripts/
@@ -18,5 +18,4 @@ DQN/
 SARSA/
 
 logs/
-
-recordings_old/
+trained_models/

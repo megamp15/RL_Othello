@@ -27,7 +27,7 @@ class NeuralNet(nn.Module):
 
         self.network = self.construct_network()
         self.network = self.network.to(self.device)
-        print(self.network)
+        # print(self.network)
 
     def device(self):
         """Retrieve device for tensorflow"""
@@ -37,7 +37,7 @@ class NeuralNet(nn.Module):
             device = torch.device("mps")
         else:
             device = torch.device("cpu")
-        print(f'Using {device} device')
+        # print(f'Using {device} device')
         return device
     
     def construct_network(self) -> nn.Sequential:
