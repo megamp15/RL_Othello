@@ -8,14 +8,15 @@ import gymnasium as gym
 import os
 
 from mem import ReplayMemory
-from nn import NeuralNet
+from neuralNet import BaseNeuralNet
 
 class DeepAgent():
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
+    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, net_type:BaseNeuralNet, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
         self.env = env
+        self.net_type= net_type
 
         # The Neural Networks for The main Q network and the target network
-        self.network = NeuralNet(state_shape, num_actions)
+        self.network = self.net_type(state_shape, num_actions)
 
         # Setup memory for DQN algorithm
         self.memory = ReplayMemory(10**4, 16, self.network.device)
@@ -35,6 +36,12 @@ class DeepAgent():
         self.loss_func = loss_func()
         self.sync_interval = sync_interval
         self.agent_type = agent_type
+        
+    def set_env(self,env):
+        self.env = env
+        
+    def set_state_shape(self,state_shape):
+        self.state_shape= state_shape
     
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
