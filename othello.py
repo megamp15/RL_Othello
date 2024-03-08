@@ -80,7 +80,6 @@ class Othello():
         if self.record_video:
             self.env.close_video_recorder()
 
-<<<<<<< HEAD
         self.env.close()
     
     def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:

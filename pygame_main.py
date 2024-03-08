@@ -78,12 +78,12 @@ if __name__ == '__main__':
     environment = game
     
 
-    #game.startGame()
-    game.train_agent(agent=p1_dqn)
+    game.startGame()
+    #game.train_agent(agent=p1_dqn)
 
 
     # Training Agents
-    train_QLearning(environment=othello, agent=Agent, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    #train_QLearning(environment=othello, agent=Agent, n_episodes=EPISODES, max_steps=MAX_STEPS)
     # train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
 
     # Evaluate Agents
