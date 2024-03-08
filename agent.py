@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import util
 import numpy as np
 import time
 import gymnasium as gym
@@ -56,7 +55,7 @@ class DeepAgent(ABC):
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
         # if epsilon=0 then flipCoin returns False, if epsilon=1 then flipCoin returns True
-        if util.flipCoin(self.epsilon):
+        if random.random() < self.epsilon:
             if available_moves != None and isinstance(available_moves,list):
                 action = random.choice(available_moves)
             else:
