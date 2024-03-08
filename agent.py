@@ -66,7 +66,7 @@ class DeepAgent(ABC):
         self.save_interval = kwargs['save_interval'] # Save the model every n steps
 
         self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'])
-        self.loss_func = loss_func
+        self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
     

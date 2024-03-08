@@ -10,15 +10,13 @@ from pathlib import Path
 import time
 
 date = time.strftime('%m-%d-%Y')
-t = time.strftime('%H_%M_%S')
-
 
 # Model saving path
-save_model_path = Path("trained_models") / date  / t
+save_model_path = Path("trained_models") / date
 save_model_path.mkdir(parents=True, exist_ok=True)
 
 
-saveDir_recordings = Path("recordings") / date  / t
+saveDir_recordings = Path("recordings") / date
 saveDir_recordings.mkdir(parents=True, exist_ok=True)
 
 
@@ -28,13 +26,13 @@ EPSILON_DECAY_RATE = 0.9
 EPSILON_MIN = 0.01
 ALPHA = 0.01 #0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 30_000 
+SKIP_TRAINING = 1_000 
 SAVE_INTERVAL = 50_000
 SYNC_INTERVAL = 10_000
 
 # TRAINING PARAMS
-EPISODES = 1_000
-MAX_STEPS = 8_000
+EPISODES = 100
+MAX_STEPS = 100
 
 MEMORY_CAPACITY = 100_000
 

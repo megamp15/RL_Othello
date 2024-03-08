@@ -8,7 +8,7 @@ from tqdm import trange
 from othello import OBS_SPACE
 
 # Logs saving path
-save_logs_path = Path("logs") / time.strftime('%m-%d-%Y')  / time.strftime('%H_%M_%S')
+save_logs_path = Path("logs") / time.strftime('%m-%d-%Y')
 save_logs_path.mkdir(parents=True, exist_ok=True)
 logger = MetricLogger(save_logs_path)
 
