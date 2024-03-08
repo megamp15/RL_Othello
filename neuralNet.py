@@ -48,7 +48,7 @@ class BaseNeuralNet(nn.Module,ABC):
         # assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
         return Q
 
-class NeuralNet(BaseNeuralNet):
+class PixelNeuralNet(BaseNeuralNet):
     """
     A deep Neural Network designed with the following layers:
     Conv2d(3,32,8,4)

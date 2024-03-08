@@ -1,9 +1,12 @@
 # import pygame
 import numpy as np
 from enum import Enum
-from othelloPlayer import OthelloPlayer, HumanPlayer
+from othelloPlayer import OthelloPlayer, HumanPlayer,AgentPlayer
 from othelloUtil import *
+from dqn import DDQN,DQN,DuelDQN
 import itertools
+
+from neuralNet import PixelNeuralNet,StateNeuralNet
 
 class PlayerTurn(Enum):
     """
@@ -258,9 +261,32 @@ class Othello():
         self.placeTile(coords)
 
 if __name__ == '__main__':
-    player1 = HumanPlayer(MoveMode.Directions8)
-    player2 = HumanPlayer(MoveMode.FullBoardSelect)
+    mode = MoveMode.FullBoardSelect
+    player1 = AgentPlayer(mode,agent=None)
+    player2 = AgentPlayer(mode,agent=None)
     game = Othello(player1,player2,(8,8))
+    #state_shape = (1,1,8,8)
+    state_shape = (1,1,10,10)
+    
+    # AGENT PARAMS
+    EPSILON = .75
+    EPSILON_DECAY_RATE = 0.99
+    EPSILON_MIN = 0.01
+    ALPHA = 0.01
+    GAMMA = 0.9
+    SKIP_TRAINING = 1_000
+    SAVE_INTERVAL = 500
+    SYNC_INTERVAL = 250
+    
+    # TRAINING PARAMS
+    EPISODES = 1
+    MAX_STEPS = 10_000
+
+    num_actions=60
+    p1_dqn = DQN(agent_type="DQN", env=game, state_shape=state_shape, net_type=StateNeuralNet, num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL)
+    p2_dqn = DQN(agent_type="DQN", env=game, state_shape=state_shape, net_type=StateNeuralNet,num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL)
+    #p1.set_state_shape(board_size)
+    #p2.set_state_shape(board_size)
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     game.startGame()
