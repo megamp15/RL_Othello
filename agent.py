@@ -37,9 +37,6 @@ class AgentParams(TypedDict):
     save_path : NotRequired[str]
 
 class DeepAgent(ABC):
-    # def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
-    #              epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int,
-    #              skip_training:int, save_interval:int, max_memory:int, loss_func = nn.MSELoss):
     def __init__(self, agent_type:AgentType, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
         # The Neural Networks for The main Q network and the target network
         self.network = NeuralNet(kwargs['state_shape'], kwargs['num_actions'])

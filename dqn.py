@@ -11,12 +11,7 @@ class DQN(DeepAgent):
     """
     A deep q learning network agent
     """
-    # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
-    #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
-    #              max_memory:int, loss_function=nn.MSELoss) -> None:
     def __init__(self,**kwargs:Unpack[AgentParams]) -> None:
-        # super().__init__(AgentType.DQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
-        #                sync_interval, skip_training, save_interval, max_memory, loss_function)
         super().__init__(agent_type=AgentType.DQN, **kwargs)
 
     @torch.no_grad() # No Backwards computations needed
@@ -45,13 +40,8 @@ class DQN(DeepAgent):
         
         return (q_est.mean().item(), loss)
 
-class DDQN(DeepAgent):    
-    # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
-    #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
-    #              max_memory:int, loss_func = nn.MSELoss):
+class DDQN(DeepAgent):
     def __init__(self,**kwargs:Unpack[AgentParams]) -> None:
-        # super().__init__(AgentType.DDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
-        #                  sync_interval, skip_training, save_interval, max_memory, loss_func)
         super().__init__(agent_type=AgentType.DDQN, **kwargs)
         self.target_net = NeuralNet(kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
@@ -92,13 +82,7 @@ class DDQN(DeepAgent):
         return (q_est.mean().item(), loss)
 
 class DuelDQN(DeepAgent):
-    
-    # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
-    #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
-    #              max_memory:int, loss_func = nn.MSELoss):
     def __init__(self,**kwargs:Unpack[AgentParams]) -> None:
-        # super().__init__(AgentType.DUELDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
-        #                  sync_interval, skip_training, save_interval, max_memory, loss_func)
         super().__init__(agent_type=AgentType.DUELDQN, **kwargs)
         
         self.value_net = NeuralNet(kwargs['state_shape'], 1)
