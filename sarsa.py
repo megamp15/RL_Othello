@@ -1,14 +1,23 @@
+from typing_extensions import Unpack
 import torch
 import torch.nn as nn
 import numpy as np
-import gymnasium as gym
 
-from nn import NeuralNet
 
-from agent import DeepAgent
+from agent import DeepAgent, AgentType, AgentParams
 
 class SARSA(DeepAgent):
-    
+    """
+    A deep sarsa learning network agent
+    """
+    # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+    #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+    #              max_memory:int, loss_function=nn.MSELoss):
+    def __init__(self,**kwargs:Unpack[AgentParams]):
+        # super().__init__(AgentType.SARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+        #                sync_interval, skip_training, save_interval, max_memory, loss_function)
+        super().__init__(agent_type=AgentType.SARSA, **kwargs)
+
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
@@ -36,9 +45,14 @@ class SARSA(DeepAgent):
 
 class SARSA_DDQN(DeepAgent):
     
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(agent_type, env, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
-        self.target_net = NeuralNet(state_shape, num_actions)
+    # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+    #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+    #              max_memory:int, loss_function=nn.MSELoss):
+    def __init__(self,**kwargs:Unpack[AgentParams]):
+        # super().__init__(AgentType.DSARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+        #                sync_interval, skip_training, save_interval, max_memory, loss_function)
+        super().__init__(agent_type=AgentType.DSARSA,**kwargs)
+        self.target_net = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
         # # Q_target parameters are frozen.
@@ -77,10 +91,15 @@ class SARSA_DDQN(DeepAgent):
 
 class SARSA_DuelDQN(DeepAgent):
     
-    def __init__(self, agent_type:str, env:gym.Env, state_shape:np.ndarray, num_actions:int, epsilon:float, epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int, loss_func = nn.MSELoss):
-        super().__init__(agent_type, env, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma, sync_interval, skip_training, save_interval, loss_func)
+    # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
+    #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
+    #              max_memory:int, loss_function=nn.MSELoss):
+    def __init__(self, **kwargs:Unpack[AgentParams]):
+        # super().__init__(AgentType.DUELSARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
+        #                sync_interval, skip_training, save_interval, max_memory, loss_function)
+        super().__init__(AgentType.DUELSARSA, **kwargs)
         
-        self.value_net = NeuralNet(state_shape, 1)
+        self.value_net = self.net_type(kwargs['state_shape'], 1)
         self.advantage_net = self.network
         
         

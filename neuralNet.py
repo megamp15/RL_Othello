@@ -18,8 +18,7 @@ class BaseNeuralNet(nn.Module,ABC):
 
         self.network = self.construct_network()
         self.network = self.network.to(self.device)
-        print(self.network)
-    
+        # print(self.network)
 
     def device(self):
         """Retrieve device for tensorflow"""
@@ -29,7 +28,7 @@ class BaseNeuralNet(nn.Module,ABC):
             device = torch.device("mps")
         else:
             device = torch.device("cpu")
-        print(f'Using {device} device')
+        # print(f'Using {device} device')
         return device
     
     @abstractmethod
