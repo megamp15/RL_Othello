@@ -263,6 +263,14 @@ class Othello():
 
         self.placeTile(coords)
         
+    def step(action:tuple[int,int])->tuple([np.ndarray,float,bool,bool]):
+        init_score = self.countScore()
+        self.placeTile(coords)
+        end_score = self.countScore()
+        reward = end_score - init_score
+        terminated = self.checkGameOver()
+        return(self.board,reward,terminated,False)
+        
     def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
         '''
             def startGame(self) -> None:
@@ -298,7 +306,7 @@ class Othello():
                 state = self.board
 
                 action = agent.get_action(state)
-                raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+                raw_obs, reward, terminated, truncated, _ = self.step(action)
 
                 if terminated or truncated or step >= max_steps:
                     episode_over = True
