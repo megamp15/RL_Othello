@@ -7,6 +7,7 @@ from dqn import DDQN,DQN,DuelDQN
 import itertools
 
 from neuralNet import PixelNeuralNet,StateNeuralNet
+from agent import DeepAgent
 
 class PlayerTurn(Enum):
     """
@@ -259,6 +260,46 @@ class Othello():
                 availableMoves = self.getAvailableMoves(coords)
 
         self.placeTile(coords)
+        
+    def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+        rewards = []
+        loss_record = []
+        q_record = []
+        for e in trange(n_episodes):
+            raw_obs, _ = self.env.reset()
+            exit = False
+            cumulative_reward = 0
+            step = 0
+            while not exit:
+                step += 1
+                state = self.preprocess_obs(raw_obs)
+
+                action = agent.get_action(state)
+                raw_obs, reward, terminated, truncated, _ = self.env.step(action)
+
+                if terminated or truncated or step >= max_steps:
+                    exit = True
+
+                next_state = self.preprocess_obs(raw_obs)
+
+                q, loss, a_exit = agent.update(state, action, reward, next_state, exit)
+
+                logger.log_step(reward, loss, q)
+
+                exit |= a_exit
+
+                cumulative_reward += reward
+            rewards.append(cumulative_reward)
+            loss_record.append(loss)
+            q_record.append(q)
+            logger.log_episode()
+
+            # if (e % 1 == 0 or e == EPISODES - 1):
+            logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
+
+        print(f"Rewards: {rewards}")
+        print(f"Loss: {loss_record}")
+        print(f"Q_record: {q_record}")
 
 if __name__ == '__main__':
     mode = MoveMode.FullBoardSelect
