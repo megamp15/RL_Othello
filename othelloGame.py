@@ -5,6 +5,7 @@ from othelloPlayer import OthelloPlayer, HumanPlayer,AgentPlayer
 from othelloUtil import *
 from dqn import DDQN,DQN,DuelDQN
 import itertools
+from tqdm import trange
 
 from neuralNet import PixelNeuralNet,StateNeuralNet
 from agent import DeepAgent
@@ -262,17 +263,36 @@ class Othello():
         self.placeTile(coords)
         
     def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+        '''
+            def startGame(self) -> None:
+                """
+                Starts a new game of Othello
+                """
+                self.resetBoard()
+                print("Game started.")
+                while not self.checkGameOver():
+                    self.takeTurn()
+                    self.activePlayer = self.flipTurn(self.activePlayer)
+                    # clear() # Clears out the cli 
+                self.resetPlayer()
+        '''
+        #Set both players to be the same agent
+        player1 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
+        player2 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
+        self.player1 = player1
+        self.player2 = player2
+        
         rewards = []
         loss_record = []
         q_record = []
         for e in trange(n_episodes):
-            raw_obs, _ = self.env.reset()
+            self.resetBoard()
             exit = False
             cumulative_reward = 0
             step = 0
             while not exit:
                 step += 1
-                state = self.preprocess_obs(raw_obs)
+                state = self.board
 
                 action = agent.get_action(state)
                 raw_obs, reward, terminated, truncated, _ = self.env.step(action)
