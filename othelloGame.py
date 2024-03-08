@@ -40,6 +40,7 @@ class Othello():
         self.board[half_size[0]-1,half_size[1]-1] = PlayerTurn.Player2.value
         self.board[half_size[0]-1,half_size[1]] = PlayerTurn.Player1.value
         self.board[half_size[0],half_size[1]-1] = PlayerTurn.Player1.value
+        self.activePlayer = PlayerTurn.Player1
     
     def displayBoard(self) -> None:
         """
@@ -286,11 +287,13 @@ class Othello():
         loss_record = []
         q_record = []
         for e in trange(n_episodes):
+            #start episode
             self.resetBoard()
-            exit = False
-            cumulative_reward = 0
+            episode_over = False
+            cumulative_reward_p1 = 0
+            cumulative_reward_p2 = 0
             step = 0
-            while not exit:
+            while not episode_over:
                 step += 1
                 state = self.board
 
@@ -298,7 +301,7 @@ class Othello():
                 raw_obs, reward, terminated, truncated, _ = self.env.step(action)
 
                 if terminated or truncated or step >= max_steps:
-                    exit = True
+                    episode_over = True
 
                 next_state = self.preprocess_obs(raw_obs)
 
@@ -306,9 +309,11 @@ class Othello():
 
                 logger.log_step(reward, loss, q)
 
-                exit |= a_exit
+                episode_over |= a_exit
 
                 cumulative_reward += reward
+                self.activePlayer = self.flipTurn(self.activePlayer)
+                
             rewards.append(cumulative_reward)
             loss_record.append(loss)
             q_record.append(q)
