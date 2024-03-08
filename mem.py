@@ -25,7 +25,7 @@ class ReplayMemory():
             "terminate": torch.tensor([terminate], dtype=torch.float, device=self.device)
         }, batch_size=[])
         if next_action is not None: 
-            data["next_action"] = torch.tensor([next_action], device=self.device)
+            data["next_action"] = torch.tensor([next_action], dtype=torch.long, device=self.device)
         self.memory.add(data)
 
     def recall(self):
@@ -35,13 +35,8 @@ class ReplayMemory():
         samples = self.memory.sample(self.batch_size).to(self.device)
         state, action, reward, next_state, terminate = (samples.get(key).detach().clone() for key in \
                                                         ("state", "action", "reward", "next_state", "terminate"))
-        # state=state.detach().clone()
-        # action=action.detach().clone()
-        # reward=reward.detach().clone() 
-        # next_state=next_state.detach().clone()
-        # terminate=terminate.detach().clone()
         if "next_action" in samples.keys():
-            next_action = samples["next_action"].detach().clone()
+            next_action = samples["next_action"]
             return state, action.squeeze(), reward.squeeze(), next_state, next_action.squeeze(), terminate.squeeze()
 
         return state, action.squeeze(), reward.squeeze(), next_state, terminate.squeeze()

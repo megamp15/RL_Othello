@@ -69,7 +69,7 @@ class DeepAgent(ABC):
         self.save_interval = kwargs['save_interval'] # Save the model every n steps
 
         self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'])
-        self.loss_func = loss_func
+        self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
         
@@ -81,7 +81,6 @@ class DeepAgent(ABC):
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
-        # if epsilon=0 then flipCoin returns False, if epsilon=1 then flipCoin returns True
         if random.random() < self.epsilon:
             if available_moves != None and isinstance(available_moves,list):
                 action = random.choice(available_moves)
@@ -129,7 +128,7 @@ class DeepAgent(ABC):
         return q_vals, loss, a_exit
     
     @abstractmethod
-    def train(self, save_path:str) -> tuple:
+    def train(self) -> tuple:
         pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:

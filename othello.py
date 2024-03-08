@@ -6,40 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange
 
-from agent import DeepAgent
-from dqn import DDQN,DQN,DuelDQN
-from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
-
-from neuralNet import PixelNeuralNet
-import time
-from pathlib import Path
-from log import MetricLogger
-
-
-saveDir_logs = Path("logs") / time.strftime('%Y%m%d-%H%M%S')
-saveDir_logs.mkdir(parents=True, exist_ok=True)
-logger = MetricLogger(saveDir_logs)
-
-saveDir_recordings = Path("recordings", exist_ok=True) /  time.strftime('%Y%m%d-%H%M%S')
-saveDir_recordings.mkdir(parents=True, exist_ok=True)
-
-saveDir_models = Path("models") / time.strftime('%Y%m%d-%H%M%S')
-saveDir_recordings.mkdir(parents=True, exist_ok=True)
-
-# AGENT PARAMS
-EPSILON = 1
-EPSILON_DECAY_RATE = 0.99999975
-EPSILON_MIN = 0.1
-ALPHA = 0.01 #0.00025
-GAMMA = 0.9
-SKIP_TRAINING = 1e5 # The amount of experience to gather before starting to train
-SAVE_INTERVAL = 2e5
-SYNC_INTERVAL = 1e4
-
-# TRAINING PARAMS
-EPISODES = 15 # Low to test for now
-MAX_STEPS = 10_000
-
 
 class OBS_SPACE(Enum):
     """
@@ -93,16 +59,16 @@ class Othello():
             env = RecordVideo(env, video_folder=saveDir_recordings, name_prefix="video", episode_trigger=lambda x: x)
         return env
 
-    def run(self) -> None:
+    def run(self, n_steps:int) -> None:
         """
-        Run Othello Environment for Testing
+        Run Othello Environment for Testing and see the environment after n_steps
         """
         observation, _ = self.env.reset()
         obs = self.preprocess_obs(observation)
         if self.record_video:
             self.env.start_video_recorder()
 
-        for _ in range(1000):
+        for _ in range(n_steps):
             action = self.env.action_space.sample() 
             observation, reward, terminated, truncated, _ = self.env.step(action)
             # obs = self.preprocess_obs(observation)
@@ -114,6 +80,7 @@ class Othello():
         if self.record_video:
             self.env.close_video_recorder()
 
+<<<<<<< HEAD
         self.env.close()
     
     def train_agent(self, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
@@ -315,42 +282,13 @@ class Othello():
         if self.record_video:
             self.env.close_video_recorder()
 
+=======
+        obs = self.preprocess_obs(observation, show_state=True)
+>>>>>>> master
         self.env.close()
 
-    def evaluate_SARSA_Agent(self, modelPath:str):
-        observation, _ = self.env.reset()
-        state = self.preprocess_obs(observation)
-        # Make epislon 0 so it always chooses actions learned by the agent
-
-        # SARSA Agents
-        Agent = SARSA(agent_type="SARSA", env=self.env, state_shape=state.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
-        # Agent = SARSA_DDQN(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
-        # Agent = SARSA_DuelDQN(agent_type="SARSA", env=self.env, state_shape=obs.shape, num_actions=self.env.action_space.n, epsilon=EPSILON, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL, sync_interval=SYNC_INTERVAL)
-        Agent.load_model(modelPath)
-
-        if self.record_video:
-            self.env.start_video_recorder()
-
-        total_reward = 0
-        for t in trange(100000):
-            action = Agent.get_action(state)
-            # print(f"action: {action}")
-            next_state, reward, terminated, truncated, info = self.env.step(action)
-            next_state = self.preprocess_obs(next_state)
-
-            state = next_state
-            total_reward += reward
-
-            if terminated or truncated:
-                break
-        print(f"Reward: {total_reward}")
-
-        if self.record_video:
-            self.env.close_video_recorder()
-
-        self.env.close()
         
-    def preprocess_obs(self, obs:np.ndarray) -> np.ndarray:
+    def preprocess_obs(self, obs:np.ndarray, show_state:bool=False) -> np.ndarray:
         """
         Crop the observation image to only look at the board.
         This should come in as [105, 80] for GRAY or [105, 80, 3] for RGB
@@ -362,25 +300,20 @@ class Othello():
         if obs.ndim > 2:
             # Crop
             obs_cropped = obs[8:-7, 6:-8, :]
-            # plt.imshow(obs_cropped)
-            # plt.show()
+            if show_state:
+                plt.imshow(obs_cropped)
+                plt.show()
             # Move color channel in front
             obs_cropped = np.moveaxis(obs_cropped, -1, 0)
         # OBS_TYPE = GRAY
         else:
             # Crop 
             obs_cropped = obs[8:-7, 6:-8]
+            if show_state:
+                plt.imshow(obs_cropped)
+                plt.show()
             # Add a dimension in front for gray color channel
             obs_cropped = np.expand_dims(obs_cropped, axis=0)
         # Add another dimension in front for batch size
         retval = np.expand_dims(obs_cropped, axis=0)
         return retval
-
-if __name__ == '__main__':
-    othello = Othello(RENDER_MODE.RGB, OBS_SPACE.GRAY, True)
-
-    # othello.run()
-    othello.train_QLearning()
-    # othello.train_SARSA()
-    
-    # othello.evaluate_SARSA_Agent("./SARSA/20240305-201726_model_17")
