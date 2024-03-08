@@ -1,20 +1,11 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from abc import ABC,abstractmethod
 
-class NeuralNet(nn.Module):
+class BaseNeuralNet(nn.Module,ABC):
     """
-    A deep Neural Network designed with the following layers:
-    Conv2d(3,32,8,4)
-    ReLU()
-    Conv2d(32,64,4,2)
-    ReLU()
-    Conv2d(64,64,3,1)
-    ReLU()
-    Flatten()
-    Linear(1792,512)
-    ReLU()
-    Linear(512,10)
+    A neural network base class for different types of neural networks used.
     """
     def __init__(self, input_dim, output_dim):
         super().__init__()
@@ -28,6 +19,7 @@ class NeuralNet(nn.Module):
         self.network = self.construct_network()
         self.network = self.network.to(self.device)
         print(self.network)
+    
 
     def device(self):
         """Retrieve device for tensorflow"""
@@ -39,6 +31,37 @@ class NeuralNet(nn.Module):
             device = torch.device("cpu")
         print(f'Using {device} device')
         return device
+    
+    @abstractmethod
+    def construct_network(self) -> nn.Sequential:
+        pass
+    
+    def get_conv_out_size(self, conv:nn.Sequential, image_dim:tuple[int,int,int,int]) -> int:
+        """
+        Calculate the size of the networks output based on its configuration and input by
+        running on dummy numbers
+        """
+        return np.prod(conv(torch.rand(*image_dim)).shape)
+    
+    def forward(self, state:np.ndarray):
+        Q = self.network(state)
+        # assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
+        return Q
+
+class NeuralNet(BaseNeuralNet):
+    """
+    A deep Neural Network designed with the following layers:
+    Conv2d(3,32,8,4)
+    ReLU()
+    Conv2d(32,64,4,2)
+    ReLU()
+    Conv2d(64,64,3,1)
+    ReLU()
+    Flatten()
+    Linear(1792,512)
+    ReLU()
+    Linear(512,10)
+    """
     
     def construct_network(self) -> nn.Sequential:
         """
@@ -68,15 +91,43 @@ class NeuralNet(nn.Module):
         
         return conv+fc
 
-    def get_conv_out_size(self, conv:nn.Sequential, image_dim:tuple[int,int,int,int]) -> int:
-        """
-        Calculate the size of the networks output based on its configuration and input by
-        running on dummy numbers
-        """
-        return np.prod(conv(torch.rand(*image_dim)).shape)
 
-    def forward(self, state:np.ndarray):
-        Q = self.network(state)
-        # assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
-        return Q
 
+class StateNeuralNet(BaseNeuralNet):
+		
+    """
+    A deep Neural Network designed with the following layers:
+    Flatten()
+    Linear(self.64, 256),
+    ReLU()
+    Linear(256, 128),
+    ReLU()
+    Linear(128, 128),
+    ReLU()
+    Linear(128, 128),
+    ReLU()
+    Linear(128, 64)
+    """
+    
+    def construct_network(self) -> nn.Sequential:
+        """
+        Just to test for right now, the following network is from 
+        
+        https://medium.com/@joachimiak.krzysztof/learning-to-play-pong-with-pytorch-tianshou-a9b8d2f1b8bd
+        """
+
+        # Followed by Fully Connected Layers
+        fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(self.height * self.width, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, self.output_dim)
+        )
+        
+        return fc
