@@ -74,7 +74,6 @@ class DeepAgent(ABC):
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
-        # if epsilon=0 then flipCoin returns False, if epsilon=1 then flipCoin returns True
         if random.random() < self.epsilon:
             if available_moves != None and isinstance(available_moves,list):
                 action = random.choice(available_moves)
@@ -90,21 +89,8 @@ class DeepAgent(ABC):
 
         return action
     
-    def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, exit:bool=False) -> tuple:
-        """
-        Updates the Q values based on the next observed state
-        """
-        a_exit = False
-        if len(self.memory) > self.max_memory:
-            a_exit = True
-        self.memory.cache(state[0], action, reward, next_state[0], exit)
-        q_vals, loss = self.train()
-        if len(self.memory) > self.max_memory:
-            a_exit = True
-        return q_vals, loss, a_exit
-    
     @abstractmethod
-    def train(self, save_path:str) -> tuple:
+    def train(self) -> tuple:
         pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:

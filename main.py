@@ -1,32 +1,46 @@
 from othello import Othello, RENDER_MODE, OBS_SPACE
 
-from othello2 import Othello2
-
 from dqn import DDQN, DQN, DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
+
+from train import train_QLearning, train_SARSA
+from test import test_agent
 
 from pathlib import Path
 import time
 
+date = time.strftime('%m-%d-%Y')
+t = time.strftime('%H_%M_%S')
+
+
 # Model saving path
-save_model_path = Path("trained_models") / time.strftime('%Y%m%d-%H%M%S')
-save_model_path.mkdir(parents=True)
+save_model_path = Path("trained_models") / date  / t
+save_model_path.mkdir(parents=True, exist_ok=True)
+
+
+saveDir_recordings = Path("recordings") / date  / t
+saveDir_recordings.mkdir(parents=True, exist_ok=True)
+
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.99999975
-EPSILON_MIN = 0.1
+EPSILON_DECAY_RATE = 0.9
+EPSILON_MIN = 0.01
 ALPHA = 0.01 #0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 1_000 # This is memory size. Prime the memory with some inital experiences.
-SAVE_INTERVAL = 1_000
-SYNC_INTERVAL = 250
+SKIP_TRAINING = 30_000 
+SAVE_INTERVAL = 50_000
+SYNC_INTERVAL = 10_000
 
 # TRAINING PARAMS
-EPISODES = 50 # Low to test for now
-MAX_STEPS = 2_000
+EPISODES = 1_000
+MAX_STEPS = 8_000
 
-MEMORY_CAPACITY = 10_000
+MEMORY_CAPACITY = 100_000
+
+
+
+
 
 if __name__ == '__main__':
     """
@@ -35,7 +49,9 @@ if __name__ == '__main__':
     VIDEO = Bool  Note: Only works with render_mode: rgb_array. render_mode is hardcoded alread if this is True
     """
     othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
-    othello2 = Othello2(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
+
+    # Check the state of gymnasium nvironment after n_steps
+    # othello.run(n_steps=1000)
 
     environment = othello
 
@@ -64,12 +80,14 @@ if __name__ == '__main__':
     dsarsa = SARSA_DDQN(**params)
     duelsarsa = SARSA_DuelDQN(**params)
 
-    environment.train_agent(dqn, 1, 10)
+    Agent = ddqn
 
-    # Check the state of othello after n_steps
-    # othello2.run(n_steps=1000)
+    # Training Agents
+    train_QLearning(environment=othello, agent=Agent, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    # train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
 
-    # othello.train_agent(agent=dqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
-
-    # othello2.train_QLearning(save_path=save_model_path, agent=ddqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
-    # othello2.train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    # Evaluate Agents
+    # Put the full path from this scripts location to the saved models location
+    # We are not saving the hyperparams so might want to make a func for that but for now evaluate right after train
+    # Agent.load()
+    # test_agent(environment=othello, agent=Agent)
