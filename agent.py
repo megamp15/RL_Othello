@@ -73,8 +73,6 @@ class DeepAgent(ABC):
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
         
-    def set_env(self,env):
-        self.env = env
         
     def set_state_shape(self,state_shape):
         self.state_shape= state_shape
