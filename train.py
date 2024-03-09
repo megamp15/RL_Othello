@@ -155,19 +155,24 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
     environment.player1 = player1
     environment.player2 = player2
     
-    rewards_p1 = []
-    rewards_p2 = []
+    rewards = [[],[]]
     loss_record = []
     q_record = []
+    stepss = []
     for e in trange(n_episodes):
         #start episode
         environment.resetBoard()
         episode_over = False
-        cumulative_reward_p1 = 0
-        cumulative_reward_p2 = 0
+        cumulative_reward = [0,0]
         step = 0
+        state = None
+        action = None
+        reward = None
         while not episode_over:
             step += 1
+            prev_state = state
+            prev_action = action
+            prev_reward = reward
             state = environment.board
             #print("Train state.shape start",state.shape)
 
@@ -176,11 +181,17 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
             #print('trainQLearningPygame action',action)
             #print('step,',step,'legal^',availableMoves)
             next_state, reward = environment.step(action)
-            action_index = getIndexFromCoords(action)
+            #print("reward",reward)
+            #TODO delete this, is hacky to get it running and isn't right at all
+            if prev_action != None:
+                prev_action_index = getIndexFromCoords(prev_action)
 
             environment.activePlayer = environment.flipTurn(environment.activePlayer)
             terminated = environment.checkGameOver()
             
+            #We calculate reward for the passive player, to account for reward
+            #from each players turn to be associated with their action.
+            #player 1 on step 1/odd steps, player 2 on step 2/even steps.
             truncated = False
             if terminated or truncated or step >= max_steps:
                 episode_over = True
@@ -189,29 +200,37 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
             #as a single reward with the temp rewards added together, and updates
             #the agent about to go.
             #print("Train state.shape into buffer",state.shape)
-            q, loss, a_exit = agent.update(state.reshape(1,-1),action_index, reward, next_state.reshape(1,-1), episode_over)
+            #Put in last turn's state/action with the reward over previous 2 turns
+            #Because agent should receive reward from previous action to current action.
+            if step > 1:
+                passive_player = (step + 1) % 2
+                full_turn_reward = reward[passive_player] + prev_reward[passive_player]
+                #print("full turn reward",full_turn_reward)
+                q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, state.reshape(1,-1), episode_over)
+                logger.log_step(reward, loss, q)
+                episode_over |= a_exit
+                cumulative_reward[passive_player] += full_turn_reward
+                
+                
 
-            logger.log_step(reward, loss, q)
-
-            episode_over |= a_exit
-
-            cumulative_reward_p1 += reward
-            cumulative_reward_p2 += reward
-            
+          
         #if step < 60:
         #    print("episode over: current step:",step)
         #    print("ending board:",environment.board)
         #    print("legal moves left:",environment.getAvailableMoves())
-        rewards_p1.append(cumulative_reward_p1)
-        rewards_p2.append(cumulative_reward_p2)
+        #    print('cumulative reward of premature game',cumulative_reward_p1)
+        rewards[0].append(cumulative_reward[0])
+        rewards[1].append(cumulative_reward[1])
         loss_record.append(loss)
         q_record.append(q)
         logger.log_episode()
+        stepss.append(step)
 
         # if (e % 1 == 0 or e == EPISODES - 1):
         logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
 
-    print(f"Rewards p1: {rewards_p1}")
-    print(f"Rewards p2: {rewards_p2}")
+    print(f"Rewards p1: {rewards[0]}")
+    print(f"Rewards p2: {rewards[1]}")
+    print(f"Stepss p2: {stepss}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")
