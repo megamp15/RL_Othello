@@ -27,17 +27,17 @@ save_recordings_path.mkdir(parents=True, exist_ok=True)
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.9
-EPSILON_MIN = 0.01
+EPSILON_DECAY_RATE = 0.99999975
+EPSILON_MIN = 0.1
 ALPHA = 0.01 #0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 1_000 
+SKIP_TRAINING = 20_000 
 SAVE_INTERVAL = 50_000
 SYNC_INTERVAL = 10_000
 
 # TRAINING PARAMS
-EPISODES = 100
-MAX_STEPS = 100
+EPISODES = 1_000
+MAX_STEPS = 8_000
 
 MEMORY_CAPACITY = 100_000
 
@@ -97,7 +97,9 @@ if __name__ == '__main__':
     # train_SARSA(save_path=save_model_path, agent=AGENT, n_episodes=EPISODES, max_steps=MAX_STEPS, logger=logger)
 
     # At the end of the log file after training save hyerparams for reference
-    # logger.record_hyperparams(params)
+    params['episodes'] = EPISODES
+    params['max_steps'] = MAX_STEPS
+    logger.record_hyperparams(params)
 
     """
     Evaluate Agents:
