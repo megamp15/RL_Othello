@@ -158,7 +158,6 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
     rewards = [[],[]]
     loss_record = []
     q_record = []
-    stepss = []
     for e in trange(n_episodes):
         #start episode
         environment.resetBoard()
@@ -174,10 +173,14 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
             prev_action = action
             prev_reward = reward
             state = environment.board
+            if step%2 == 0:
+                state = -state
 
             availableMoves = environment.getAvailableMoves()
             action = agent.get_action(state,availableMoves)
             next_state, reward = environment.step(action)
+            if step%2 == 1:
+                next_state = -next_state
             if prev_action != None:
                 prev_action_index = getIndexFromCoords(prev_action)
 
@@ -196,7 +199,10 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
             if step > 1:
                 passive_player = (step + 1) % 2
                 full_turn_reward = reward[passive_player] + prev_reward[passive_player]
-                q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, state.reshape(1,-1), episode_over)
+                availableMoves = environment.getAvailableMoves()
+                next_action = agent.get_action(next_state,availableMoves)
+                next_action_index = getIndexFromCoords(next_action)
+                q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1), next_action_index,episode_over)
                 logger.log_step(reward, loss, q)
                 episode_over |= a_exit
                 
@@ -208,13 +214,12 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
         loss_record.append(loss)
         q_record.append(q)
         logger.log_episode()
-        stepss.append(step)
 
         # if (e % 1 == 0 or e == EPISODES - 1):
         logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
 
     print(f"Rewards p1: {rewards[0]}")
     print(f"Rewards p2: {rewards[1]}")
-    print(f"Stepss p2: {stepss}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")
+    

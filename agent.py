@@ -81,6 +81,8 @@ class DeepAgent(ABC):
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
+        if available_moves != None and len(available_moves) == 0:
+            return (0,0)
         rand_val = random.random()
         if rand_val < self.epsilon:
             if available_moves != None and isinstance(available_moves,list):
@@ -105,14 +107,16 @@ class DeepAgent(ABC):
         mask[0,indices] = 0
         return mask + q_vals_actions
     
-    def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, exit:bool=False) -> tuple:
+    def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, next_action:int,term:bool=False) -> tuple:
         """
         Updates the Q values based on the next observed state
         """
         a_exit = False
         if len(self.memory) > self.max_memory:
             a_exit = True
-        self.memory.cache(state[0], action, reward, next_state[0], exit)
+        #print('agent:update shapes going in:')
+        #print(state[0].shape,type(action),type(reward),next_state[0].shape,type(next_action),type(term))        
+        self.memory.cache(state[0], action, reward, next_state[0], next_action, term)
         q_vals, loss = self.train()
         if len(self.memory) > self.max_memory:
             a_exit = True

@@ -26,6 +26,8 @@ class DQN(DeepAgent):
             torch.arange(0, self.mem_batch_size), best_action
         ]
         not_done = 1 - terminate # Invert for mult below
+        #print('dqn:q_target shapes reward next_Q not_done',reward.shape,next_Q.shape,not_done.shape)
+        #print('dqn:q_target not done',not_done)
         return (reward + self.gamma * next_Q*not_done).float()
     
     def train(self) -> tuple:
@@ -37,7 +39,7 @@ class DQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         #print('dqn Train state shape:',state)
         #print('dqn Train action:',action)
         q_est = self.current_q_w_estimate(state, action)
@@ -87,7 +89,7 @@ class DDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, _ ,terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -128,7 +130,7 @@ class DuelDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, _,terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)
