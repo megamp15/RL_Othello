@@ -1,18 +1,12 @@
 from agent import DeepAgent
 from log import MetricLogger
 
-from pathlib import Path
-import time
 from tqdm import trange
 
 from othello import OBS_SPACE
 
-# Logs saving path
-save_logs_path = Path("logs") / time.strftime('%m-%d-%Y')
-save_logs_path.mkdir(parents=True, exist_ok=True)
-logger = MetricLogger(save_logs_path)
 
-def train_QLearning(environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+def train_QLearning(environment, agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
     rewards = []
     loss_record = []
     q_record = []
@@ -67,7 +61,7 @@ def train_QLearning(environment, agent:DeepAgent, n_episodes:int=1, max_steps:in
     print(f"Q_record: {q_record}")
 
 
-def train_SARSA(environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+def train_SARSA(environment, agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
     rewards = []
     loss_record = []
     q_record = []

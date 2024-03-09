@@ -106,3 +106,12 @@ class MetricLogger:
             plt.plot(getattr(self, f"moving_avg_{metric}"), label=f"moving_avg_{metric}")
             plt.legend()
             plt.savefig(getattr(self, f"{metric}_plot"))
+
+    def record_hyperparams(self, hyperparams):
+        del hyperparams['state_shape']
+        del hyperparams['num_actions']
+        print(hyperparams)
+        with open(self.save_log, "a") as f:
+            f.write(
+                f"\n Hyperparams: {hyperparams}"
+            )

@@ -8,17 +8,22 @@ from test import test_agent
 
 from pathlib import Path
 import time
+from log import MetricLogger
 
 date = time.strftime('%m-%d-%Y')
+t = time.strftime('%H_%M_%S')
 
 # Model saving path
-save_model_path = Path("trained_models") / date
+save_model_path = Path("trained_models") / date / t
 save_model_path.mkdir(parents=True, exist_ok=True)
 
+# Logs saving path
+save_logs_path = Path("logs") / date / t
+save_logs_path.mkdir(parents=True, exist_ok=True)
+logger = MetricLogger(save_logs_path)
 
-saveDir_recordings = Path("recordings") / date
-saveDir_recordings.mkdir(parents=True, exist_ok=True)
-
+save_recordings_path = Path("recordings") / date / t
+save_recordings_path.mkdir(parents=True, exist_ok=True)
 
 # AGENT PARAMS
 EPSILON = 1
@@ -37,16 +42,13 @@ MAX_STEPS = 100
 MEMORY_CAPACITY = 100_000
 
 
-
-
-
 if __name__ == '__main__':
     """
     RENDER_MODE = ["human" or "rgb_array"] Human mode makes you see the board where as RGB will just do it in the background
     OBSERVATION_TYPE = ["RGB", "GRAY", "RAM"] # RGB for color image, and GRAY for grayscale. RAM needs a diff env so that will cause an error for rn
     VIDEO = Bool  Note: Only works with render_mode: rgb_array. render_mode is hardcoded alread if this is True
     """
-    othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
+    othello = Othello(render_mode=RENDER_MODE.RGB, observation_type=OBS_SPACE.RGB, record_video=False, save_recordings_path=save_recordings_path)
 
     # Check the state of gymnasium nvironment after n_steps
     # othello.run(n_steps=1000)
@@ -78,14 +80,33 @@ if __name__ == '__main__':
     dsarsa = SARSA_DDQN(**params)
     duelsarsa = SARSA_DuelDQN(**params)
 
-    Agent = ddqn
 
-    # Training Agents
-    train_QLearning(environment=othello, agent=Agent, n_episodes=EPISODES, max_steps=MAX_STEPS)
-    # train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    # 
+    """
+    Training Agents:
+    Set the hyperparams 
+    uncomment one of the train functions and specify one of the agents
+    Uncomment the logger.record_hyperparams to save the hyperparams to the log file
+    """
+    AGENT = dqn
 
-    # Evaluate Agents
-    # Put the full path from this scripts location to the saved models location
-    # We are not saving the hyperparams so might want to make a func for that but for now evaluate right after train
-    # Agent.load()
-    # test_agent(environment=othello, agent=Agent)
+    # make sure Agent is Q-Learning Agent
+    train_QLearning(environment=othello, agent=AGENT, n_episodes=EPISODES, max_steps=MAX_STEPS, logger=logger)
+
+    # make sure Agent is SARSA Agent
+    # train_SARSA(save_path=save_model_path, agent=AGENT, n_episodes=EPISODES, max_steps=MAX_STEPS, logger=logger)
+
+    # At the end of the log file after training save hyerparams for reference
+    # logger.record_hyperparams(params)
+
+    """
+    Evaluate Agents:
+        Comment out the above train function(s) and logger.record_hyperparams lines
+
+        Put the full path from this scripts location to the saved models location
+        Set the global hyperparams to what is at the end of the log files for the model you trained
+        If you want to record video: Set the record_video param of the environment to True
+    """
+
+    # AGENT.load_model('./trained_models/03-08-2024/18_08_54/DQN_model_7')
+    # test_agent(environment=othello, agent=AGENT)
