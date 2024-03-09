@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from nn import NeuralNet
 
 from agent import DeepAgent, AgentType, AgentParams
 
@@ -22,6 +21,9 @@ class SARSA(DeepAgent):
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
+        #print('sarsa q_target',next_state.shape)
+        #print(next_action)
+        #print(next_action.dtype)
         next_Q = self.network(next_state)[
             torch.arange(0, self.mem_batch_size), next_action
         ]
@@ -53,7 +55,7 @@ class SARSA_DDQN(DeepAgent):
         # super().__init__(AgentType.DSARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
         #                sync_interval, skip_training, save_interval, max_memory, loss_function)
         super().__init__(agent_type=AgentType.DSARSA,**kwargs)
-        self.target_net = NeuralNet(kwargs['state_shape'], kwargs['num_actions'])
+        self.target_net = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
         # # Q_target parameters are frozen.
@@ -100,7 +102,7 @@ class SARSA_DuelDQN(DeepAgent):
         #                sync_interval, skip_training, save_interval, max_memory, loss_function)
         super().__init__(AgentType.DUELSARSA, **kwargs)
         
-        self.value_net = NeuralNet(kwargs['state_shape'], 1)
+        self.value_net = self.net_type(kwargs['state_shape'], 1)
         self.advantage_net = self.network
         
         

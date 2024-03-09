@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from nn import NeuralNet
 
 from agent import DeepAgent, AgentType, AgentParams
 
@@ -27,6 +26,8 @@ class DQN(DeepAgent):
             torch.arange(0, self.mem_batch_size), best_action
         ]
         not_done = 1 - terminate # Invert for mult below
+        #print('dqn:q_target shapes reward next_Q not_done',reward.shape,next_Q.shape,not_done.shape)
+        #print('dqn:q_target not done',not_done)
         return (reward + self.gamma * next_Q*not_done).float()
     
     def train(self) -> tuple:
@@ -38,12 +39,16 @@ class DQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, _ , terminate = self.memory.recall()
+        #print('dqn Train state shape:',state)
+        #print('dqn Train action:',action)
         q_est = self.current_q_w_estimate(state, action)
+        #print('dqn::Train q_target rew nxt_st term',reward.shape, next_state.shape, terminate.shape)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)
         
         return (q_est.mean().item(), loss)
+
 
 class DDQN(DeepAgent):    
     # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
@@ -53,7 +58,7 @@ class DDQN(DeepAgent):
         # super().__init__(AgentType.DDQN, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
         #                  sync_interval, skip_training, save_interval, max_memory, loss_func)
         super().__init__(agent_type=AgentType.DDQN, **kwargs)
-        self.target_net = NeuralNet(kwargs['state_shape'], kwargs['num_actions'])
+        self.target_net = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
         # # Q_target parameters are frozen.
@@ -84,7 +89,7 @@ class DDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state ,_ , terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -92,7 +97,6 @@ class DDQN(DeepAgent):
         return (q_est.mean().item(), loss)
 
 class DuelDQN(DeepAgent):
-    
     # def __init__(self, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float, epsilon_decay_rate:float,
     #              epsilon_min:float, alpha:float, gamma:float, sync_interval:int, skip_training:int, save_interval:int,
     #              max_memory:int, loss_func = nn.MSELoss):
@@ -101,7 +105,7 @@ class DuelDQN(DeepAgent):
         #                  sync_interval, skip_training, save_interval, max_memory, loss_func)
         super().__init__(agent_type=AgentType.DUELDQN, **kwargs)
         
-        self.value_net = NeuralNet(kwargs['state_shape'], 1)
+        self.value_net = self.net_type(kwargs['state_shape'], 1)
         self.advantage_net = self.network
         
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
@@ -126,7 +130,7 @@ class DuelDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate = self.memory.recall()
+        state, action, reward, next_state, _ , terminate  = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)

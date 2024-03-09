@@ -1,5 +1,12 @@
 from othello import Othello, RENDER_MODE, OBS_SPACE
 
+from othello2 import Othello2
+
+from othelloGame import Othello as OthelloGame
+from othelloPlayer import AgentPlayer
+from neuralNet import StateNeuralNet
+from othelloUtil import MoveMode
+
 from dqn import DDQN, DQN, DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 
@@ -56,10 +63,13 @@ if __name__ == '__main__':
     environment = othello
 
     # Define agent parameters once so it's not quite so verbose
-    params = {'state_shape' : environment.state_space,
-              'num_actions' : environment.num_actions,
+    params = {
+              #'state_shape' : environment.state_space,
+              'state_shape' : (1,1,8,8),
+              'num_actions' : 64,
               'epsilon' : EPSILON,
-              'epsilon_decay_rate' : EPSILON_DECAY_RATE,
+              #'epsilon_decay_rate' : EPSILON_DECAY_RATE,
+              'epsilon_decay_rate' : 0.9,
               'epsilon_min' : EPSILON_MIN,
               'alpha' : ALPHA,
               'gamma' : GAMMA,
@@ -70,6 +80,28 @@ if __name__ == '__main__':
               'save_path' : save_model_path
               }
 
+    """
+    RENDER_MODE = ["human" or "rgb_array"] Human mode makes you see the board where as RGB will just do it in the background
+    OBSERVATION_TYPE = ["RGB", "GRAY", "RAM"] # RGB for color image, and GRAY for grayscale. RAM needs a diff env so that will cause an error for rn
+    VIDEO = Bool  Note: Only works with render_mode: rgb_array. render_mode is hardcoded alread if this is True
+    """
+    #othello = Othello(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
+    #othello2 = Othello2(RENDER_MODE.RGB, OBS_SPACE.RGB, False)
+    
+    mode = MoveMode.FullBoardSelect
+    p1_dqn = DQN(net_type=StateNeuralNet,**params)
+    p2_dqn = DQN(net_type=StateNeuralNet,**params)
+    player1 = AgentPlayer(mode,agent=p1_dqn)
+    player2 = AgentPlayer(mode,agent=p2_dqn)
+    #player1.setAgent(p1_dqn)
+    #player2.setAgent(p2_dqn)
+
+    
+    game = OthelloGame(player1,player2,(8,8))
+    environment = game
+    
+
+    '''
     # Q-Learning Agents
     dqn = DQN(**params)
     ddqn = DDQN(**params)
@@ -79,7 +111,11 @@ if __name__ == '__main__':
     sarsa = SARSA(**params)
     dsarsa = SARSA_DDQN(**params)
     duelsarsa = SARSA_DuelDQN(**params)
+    '''
+    #game.startGame()
+    game.train_agent(agent=p1_dqn)
 
+    #Agent = ddqn
 
     """
     Training Agents:

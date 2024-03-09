@@ -12,7 +12,9 @@ import random
 from abc import ABC, abstractmethod
 
 from mem import ReplayMemory
-from nn import NeuralNet
+from neuralNet import BaseNeuralNet
+from othelloUtil import *
+
 
 class AgentType(Enum):
     DQN = "DQN"
@@ -40,9 +42,10 @@ class DeepAgent(ABC):
     # def __init__(self, agent_type:AgentType, state_shape:tuple[int,int,int,int], num_actions:int, epsilon:float,
     #              epsilon_decay_rate:float, epsilon_min:float, alpha:float, gamma:float, sync_interval:int,
     #              skip_training:int, save_interval:int, max_memory:int, loss_func = nn.MSELoss):
-    def __init__(self, agent_type:AgentType, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
+    def __init__(self, agent_type:AgentType, net_type:BaseNeuralNet, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
         # The Neural Networks for The main Q network and the target network
-        self.network = NeuralNet(kwargs['state_shape'], kwargs['num_actions'])
+        self.net_type = net_type
+        self.network = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         self.num_actions = kwargs['num_actions']
         self.max_memory = kwargs['max_memory']
 
@@ -69,12 +72,19 @@ class DeepAgent(ABC):
         self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
+        
+        
+    def set_state_shape(self,state_shape):
+        self.state_shape= state_shape
     
     def decay_epsilon(self) -> None:
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
-        if random.random() < self.epsilon:
+        if available_moves != None and len(available_moves) == 0:
+            return (0,0)
+        rand_val = random.random()
+        if rand_val < self.epsilon:
             if available_moves != None and isinstance(available_moves,list):
                 action = random.choice(available_moves)
             else:
@@ -82,19 +92,43 @@ class DeepAgent(ABC):
         else:
             state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
             q_vals_actions = self.network(state)
+            q_vals_actions = self.clamp_illegal_actions(q_vals_actions,available_moves)
             action = torch.argmax(q_vals_actions).item()
+            action = getCoordsFromIndex(action)
 
         self.decay_epsilon()
         self.step += 1
 
         return action
     
+    def clamp_illegal_actions(self,q_vals_actions:torch.tensor,available_moves:list)->None:
+        mask = torch.ones_like(q_vals_actions) * float('-inf')
+        indices = [getIndexFromCoords(m) for m in available_moves]
+        mask[0,indices] = 0
+        return mask + q_vals_actions
+    
+    def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, next_action:int,term:bool=False) -> tuple:
+        """
+        Updates the Q values based on the next observed state
+        """
+        #print('agent:update shapes going in:')
+        #print(state[0].shape,type(action),type(reward),next_state[0].shape,type(next_action),type(term))        
+        self.memory.cache(state[0], action, reward, next_state[0], next_action, term)
+        q_vals, loss = self.train()
+        return q_vals, loss
+    
     @abstractmethod
     def train(self) -> tuple:
         pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
-        current_Q = self.network(state)[np.arange(0, self.mem_batch_size), action]  
+        #print('cur_q_w_est state shape input:',state.shape)
+        #print(self.network)
+        pred = self.network(state)
+        #print('pred shape',pred.shape)
+        #print('arange',np.arange(0, self.mem_batch_size).shape)
+        #print('action',action)
+        current_Q = pred[np.arange(0, self.mem_batch_size), action]  
         return current_Q
 
     def update_network(self,q_w_estimate:float, q_target:float) -> float:

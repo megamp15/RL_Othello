@@ -1,9 +1,14 @@
 # import pygame
 import numpy as np
 from enum import Enum
-from othelloPlayer import OthelloPlayer, HumanPlayer
+from othelloPlayer import OthelloPlayer, HumanPlayer,AgentPlayer
 from othelloUtil import *
+from dqn import DDQN,DQN,DuelDQN
 import itertools
+from tqdm import trange
+
+from neuralNet import PixelNeuralNet,StateNeuralNet
+from agent import DeepAgent
 
 class PlayerTurn(Enum):
     """
@@ -35,6 +40,7 @@ class Othello():
         self.board[half_size[0]-1,half_size[1]-1] = PlayerTurn.Player2.value
         self.board[half_size[0]-1,half_size[1]] = PlayerTurn.Player1.value
         self.board[half_size[0],half_size[1]-1] = PlayerTurn.Player1.value
+        self.activePlayer = PlayerTurn.Player1
     
     def displayBoard(self) -> None:
         """
@@ -238,7 +244,7 @@ class Othello():
             board = self.board
             if self.activePlayer == PlayerTurn.Player2:
                 board = -board
-            coords = current_player.selectMove(board, availableMoves)
+            coords = current_player.selectMoveFullBoardSelect(board, availableMoves)
         else:
             coords = (self.board_size-[1,1])//2
             print(f"Current Position: {coords}")
@@ -256,11 +262,61 @@ class Othello():
                 availableMoves = self.getAvailableMoves(coords)
 
         self.placeTile(coords)
+        
+    def step(self,action:tuple[int,int])->tuple([np.ndarray,np.ndarray]):
+        #print('OthelloGame step: action',action)
+        #print("OthelloGame getPlayer player_index",self.activePlayer,player_index)
+        init_score = self.countScore()
+        self.placeTile(action)
+        end_score = self.countScore()
+        #print("step init score",init_score)
+        #print("step end score",end_score)
+        reward = np.subtract(end_score,init_score)
+        return(self.board,reward)
+        
 
 if __name__ == '__main__':
-    player1 = HumanPlayer(MoveMode.Directions8)
-    player2 = HumanPlayer(MoveMode.FullBoardSelect)
+    mode = MoveMode.FullBoardSelect
+    player1 = AgentPlayer(mode,agent=None)
+    player2 = AgentPlayer(mode,agent=None)
     game = Othello(player1,player2,(8,8))
+    #state_shape = (1,1,8,8)
+    #state_shape = (1,1,10,10)
+    #Params stolen from othello.py to get it running.
+    # AGENT PARAMS
+    EPSILON = .75
+    EPSILON_DECAY_RATE = 0.99
+    EPSILON_MIN = 0.01
+    ALPHA = 0.01
+    GAMMA = 0.9
+    SKIP_TRAINING = 1_000
+    SAVE_INTERVAL = 500
+    SYNC_INTERVAL = 250
+    
+    # TRAINING PARAMS
+    EPISODES = 1
+    MAX_STEPS = 10_000
+
+    num_actions=60
+    
+    # Define agent parameters once so it's not quite so verbose
+    params = {'state_shape' : environment.state_space,
+              'num_actions' : environment.num_actions,
+              'epsilon' : EPSILON,
+              'epsilon_decay_rate' : EPSILON_DECAY_RATE,
+              'epsilon_min' : EPSILON_MIN,
+              'alpha' : ALPHA,
+              'gamma' : GAMMA,
+              'sync_interval' : SYNC_INTERVAL,
+              'skip_training' : SKIP_TRAINING,
+              'save_interval' : SAVE_INTERVAL,
+              'max_memory' : MEMORY_CAPACITY,
+              'save_path' : save_model_path
+              }
+    p1_dqn = DQN(env=game, state_shape=state_shape, net_type=StateNeuralNet, num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL,max_memory=10_000,save_path='./DQN/test.junk')
+    p2_dqn = DQN(env=game, state_shape=state_shape, net_type=StateNeuralNet,num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL,max_memory=10_000,save_path='./DQN/test.junk')
+    player1.setAgent(p1_dqn)    
+    player2.setAgent(p2_dqn)
     # The available moves at (3,3) are north and east
     # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     game.startGame()

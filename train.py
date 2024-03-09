@@ -4,6 +4,8 @@ from log import MetricLogger
 from tqdm import trange
 
 from othello import OBS_SPACE
+from othelloPlayer import AgentPlayer
+from othelloUtil import *
 
 
 def train_QLearning(environment, agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
@@ -120,3 +122,97 @@ def train_SARSA(environment, agent:DeepAgent, n_episodes:int, max_steps:int, log
     print(f"Rewards: {rewards}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")  
+    
+    
+def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+    '''
+    Train function for the othelloGame environment
+
+    Parameters
+    ----------
+    environment : othelloGame
+        DESCRIPTION.
+    agent : DeepAgent
+        DESCRIPTION.
+    n_episodes : int, optional
+        DESCRIPTION. The default is 1.
+    max_steps : int, optional
+        DESCRIPTION. The default is 100.
+
+    Returns
+    -------
+    None
+    '''
+    #Set both players to be the same agent
+    player1 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
+    player2 = AgentPlayer(MoveMode.FullBoardSelect,agent=agent)
+    environment.player1 = player1
+    environment.player2 = player2
+    
+    rewards = [[],[]]
+    loss_record = []
+    q_record = []
+    for e in trange(n_episodes):
+        #start episode
+        environment.resetBoard()
+        episode_over = False
+        cumulative_reward = [0,0]
+        step = 0
+        state = None
+        action = None
+        reward = None
+        while not episode_over:
+            step += 1
+            prev_state = state
+            prev_action = action
+            prev_reward = reward
+            state = environment.board
+            if step%2 == 0:
+                state = -state
+
+            availableMoves = environment.getAvailableMoves()
+            action = agent.get_action(state,availableMoves)
+            next_state, reward = environment.step(action)
+            if step%2 == 1:
+                next_state = -next_state
+            if prev_action != None:
+                prev_action_index = getIndexFromCoords(prev_action)
+
+            environment.activePlayer = environment.flipTurn(environment.activePlayer)
+            terminated = environment.checkGameOver()
+            
+            truncated = False
+            if terminated or truncated or step >= max_steps:
+                episode_over = True
+
+            #We calculate reward for the passive player, to account for reward
+            #from each players turn to be associated with their action.
+            #player 1 on step 1/odd steps, player 2 on step 2/even steps.
+            #Put in last turn's state/action with the reward over previous 2 turns
+            #Because agent should receive reward from previous action to current action.
+            if step > 1:
+                passive_player = (step + 1) % 2
+                full_turn_reward = reward[passive_player] + prev_reward[passive_player]
+                availableMoves = environment.getAvailableMoves()
+                next_action = agent.get_action(next_state,availableMoves)
+                next_action_index = getIndexFromCoords(next_action)
+                q, loss = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1), episode_over,next_action_index)
+                logger.log_step(reward, loss, q)
+                
+            cumulative_reward += reward
+                
+
+        rewards[0].append(cumulative_reward[0])
+        rewards[1].append(cumulative_reward[1])
+        loss_record.append(loss)
+        q_record.append(q)
+        logger.log_episode()
+
+        # if (e % 1 == 0 or e == EPISODES - 1):
+        logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
+
+    print(f"Rewards p1: {rewards[0]}")
+    print(f"Rewards p2: {rewards[1]}")
+    print(f"Loss: {loss_record}")
+    print(f"Q_record: {q_record}")
+    

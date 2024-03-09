@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from tqdm import trange
 
 
-
 class OBS_SPACE(Enum):
     """
     The observation spaces available through Gymnasium
