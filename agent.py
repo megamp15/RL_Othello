@@ -140,7 +140,12 @@ class DeepAgent(ABC):
 
     def save_model(self) -> None:
         file_name = f'{self.agent_type.value}_model_{int(self.step // self.save_interval)}'
-        torch.save(dict(self.network.state_dict()),f'{self.save_path}/{file_name}')
+        torch.save(
+            dict(model=self.network.state_dict(), 
+                 epsilon=self.epsilon
+            ),
+            f'{self.save_path}/{file_name}'
+        )
         # print(f'\nDQN Model saved at step: {self.step}')
 
     def load_model(self, model_path:str) -> None:

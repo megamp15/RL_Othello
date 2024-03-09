@@ -9,9 +9,9 @@ class MetricLogger:
         self.save_log = save_dir / "log"
         with open(self.save_log, "w") as f:
             f.write(
-                f"{'Episode':>8}{'Step':>8}{'Epsilon':>10}{'MeanReward':>15}"
-                f"{'MeanLength':>15}{'MeanLoss':>15}{'MeanQValue':>15}"
-                f"{'TimeDelta':>15}{'Time':>20}\n"
+                f"{'Episode':>15}{'Step':>25}{'Epsilon':>30}{'MeanReward':>30}"
+                f"{'MeanLength':>30}{'MeanLoss':>30}{'MeanQValue':>30}"
+                f"{'TimeDelta':>30}{'Time':>45}\n"
             )
         self.ep_rewards_plot = save_dir / "reward_plot.jpg"
         self.ep_lengths_plot = save_dir / "length_plot.jpg"
@@ -95,14 +95,28 @@ class MetricLogger:
 
         with open(self.save_log, "a") as f:
             f.write(
-                f"{episode:8d}{step:8d}{epsilon:10.3f}"
-                f"{mean_ep_reward:15.3f}{mean_ep_length:15.3f}{mean_ep_loss:15.3f}{mean_ep_q:15.3f}"
-                f"{time_since_last_record:15.3f}"
-                f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'):>20}\n"
+                f"{episode:15d}{step:25d}{epsilon:30.3f}"
+                f"{mean_ep_reward:30.3f}{mean_ep_length:30.3f}{mean_ep_loss:30.3f}{mean_ep_q:30.3f}"
+                f"{time_since_last_record:30.3f}"
+                f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'):>45}\n"
             )
 
         for metric in ["ep_lengths", "ep_avg_losses", "ep_avg_qs", "ep_rewards"]:
             plt.clf()
             plt.plot(getattr(self, f"moving_avg_{metric}"), label=f"moving_avg_{metric}")
+            plt.xlabel('Episode')
+            plt.ylabel(metric)
+            plt.title(f'{metric.capitalize()} over Episodes')
             plt.legend()
             plt.savefig(getattr(self, f"{metric}_plot"))
+
+    def record_hyperparams(self, hyperparams):
+        del hyperparams['state_shape']
+        del hyperparams['num_actions']
+        hyperparams_str = '\n'.join([f"{key}: {value}" for key, value in hyperparams.items()])
+        print("\nHyperparameters:")
+        print(hyperparams_str)
+        with open(self.save_log, "a") as f:
+            f.write(
+                f"\nHyperparameters:\n{hyperparams_str}\n"
+            )

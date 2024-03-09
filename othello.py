@@ -35,10 +35,11 @@ class Othello():
     """
     The environment for Othello that wraps the Gymnasium Atari Environment
     """
-    def __init__(self, render_mode:RENDER_MODE, observation_type:OBS_SPACE, record_video:bool):
+    def __init__(self, render_mode:RENDER_MODE, observation_type:OBS_SPACE, record_video:bool, save_recordings_path:str=None):
         self.render_mode = render_mode
         self.obs_type = observation_type
         self.record_video = record_video 
+        self.save_recordings_path = save_recordings_path
         self.env = self.setup_env()
 
         obs, _ = self.env.reset()
@@ -56,7 +57,7 @@ class Othello():
         # Resize obs_space from 210 x 160 -> 105 x 80 to conserve data space but same resolution
         env = ResizeObservation(env, (105, 80))
         if self.record_video:
-            env = RecordVideo(env, video_folder=saveDir_recordings, name_prefix="video", episode_trigger=lambda x: x)
+            env = RecordVideo(env, video_folder=self.save_recordings_path, name_prefix="video", episode_trigger=lambda x: x)
         return env
 
     def run(self, n_steps:int) -> None:
