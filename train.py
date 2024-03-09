@@ -6,6 +6,8 @@ import time
 from tqdm import trange
 
 from othello import OBS_SPACE
+from othelloPlayer import AgentPlayer
+from othelloUtil import *
 
 # Logs saving path
 save_logs_path = Path("logs") / time.strftime('%m-%d-%Y')
@@ -153,38 +155,55 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
     environment.player1 = player1
     environment.player2 = player2
     
-    rewards = []
+    rewards_p1 = []
+    rewards_p2 = []
     loss_record = []
     q_record = []
     for e in trange(n_episodes):
         #start episode
-        self.resetBoard()
+        environment.resetBoard()
         episode_over = False
         cumulative_reward_p1 = 0
         cumulative_reward_p2 = 0
         step = 0
         while not episode_over:
             step += 1
-            state = self.board
+            state = environment.board
+            #print("Train state.shape start",state.shape)
 
-            action = agent.get_action(state)
-            raw_obs, reward, terminated, truncated, _ = self.step(action)
+            availableMoves = environment.getAvailableMoves()
+            action = agent.get_action(state,availableMoves)
+            #print('trainQLearningPygame action',action)
+            #print('step,',step,'legal^',availableMoves)
+            next_state, reward = environment.step(action)
+            action_index = getIndexFromCoords(action)
 
+            environment.activePlayer = environment.flipTurn(environment.activePlayer)
+            terminated = environment.checkGameOver()
+            
+            truncated = False
             if terminated or truncated or step >= max_steps:
                 episode_over = True
 
-            next_state = self.preprocess_obs(raw_obs)
-
-            q, loss, a_exit = agent.update(state, action, reward, next_state, exit)
+            #TODO work this into a better version which accurately handles a pair of turns
+            #as a single reward with the temp rewards added together, and updates
+            #the agent about to go.
+            #print("Train state.shape into buffer",state.shape)
+            q, loss, a_exit = agent.update(state.reshape(1,-1),action_index, reward, next_state.reshape(1,-1), episode_over)
 
             logger.log_step(reward, loss, q)
 
             episode_over |= a_exit
 
-            cumulative_reward += reward
-            self.activePlayer = self.flipTurn(self.activePlayer)
+            cumulative_reward_p1 += reward
+            cumulative_reward_p2 += reward
             
-        rewards.append(cumulative_reward)
+        #if step < 60:
+        #    print("episode over: current step:",step)
+        #    print("ending board:",environment.board)
+        #    print("legal moves left:",environment.getAvailableMoves())
+        rewards_p1.append(cumulative_reward_p1)
+        rewards_p2.append(cumulative_reward_p2)
         loss_record.append(loss)
         q_record.append(q)
         logger.log_episode()
@@ -192,6 +211,7 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
         # if (e % 1 == 0 or e == EPISODES - 1):
         logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
 
-    print(f"Rewards: {rewards}")
+    print(f"Rewards p1: {rewards_p1}")
+    print(f"Rewards p2: {rewards_p2}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")

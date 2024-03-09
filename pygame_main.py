@@ -8,7 +8,7 @@ from othelloUtil import MoveMode
 from dqn import DDQN, DQN, DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 
-from train import train_QLearning, train_SARSA
+from train import train_QLearning, train_SARSA,train_QLearning_pygame
 from test import test_agent
 
 from pathlib import Path
@@ -27,7 +27,7 @@ saveDir_recordings.mkdir(parents=True, exist_ok=True)
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.9
+EPSILON_DECAY_RATE = 0.999
 EPSILON_MIN = 0.01
 ALPHA = 0.01 #0.00025
 GAMMA = 0.9
@@ -54,7 +54,7 @@ if __name__ == '__main__':
               'num_actions' : 64,
               'epsilon' : EPSILON,
               #'epsilon_decay_rate' : EPSILON_DECAY_RATE,
-              'epsilon_decay_rate' : 0.9,
+              'epsilon_decay_rate' : 0.1,
               'epsilon_min' : EPSILON_MIN,
               'alpha' : ALPHA,
               'gamma' : GAMMA,
@@ -76,12 +76,12 @@ if __name__ == '__main__':
     environment = game
     
 
-    game.startGame()
+    #game.startGame()
     #game.train_agent(agent=p1_dqn)
 
 
     # Training Agents
-    #train_QLearning(environment=othello, agent=Agent, n_episodes=EPISODES, max_steps=MAX_STEPS)
+    train_QLearning_pygame(environment=environment, agent=p1_dqn, n_episodes=EPISODES, max_steps=MAX_STEPS)
     # train_SARSA(save_path=save_model_path, agent=sarsa, n_episodes=EPISODES, max_steps=MAX_STEPS)
 
     # Evaluate Agents

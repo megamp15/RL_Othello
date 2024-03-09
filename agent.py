@@ -81,7 +81,8 @@ class DeepAgent(ABC):
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
     def get_action(self, state:np.ndarray, available_moves:list=None) -> int:
-        if random.random() < self.epsilon:
+        rand_val = random.random()
+        if rand_val < self.epsilon:
             if available_moves != None and isinstance(available_moves,list):
                 action = random.choice(available_moves)
             else:
@@ -100,18 +101,8 @@ class DeepAgent(ABC):
     
     def clamp_illegal_actions(self,q_vals_actions:torch.tensor,available_moves:list)->None:
         mask = torch.ones_like(q_vals_actions) * float('-inf')
-        #print("clamp_illegal_actions")
-        #print(q_vals_actions)
-        #print(available_moves)
-        #print(mask)
-        #print(mask.shape)
-        #print(q_vals_actions.shape)
         indices = [getIndexFromCoords(m) for m in available_moves]
-        #print(indices)
         mask[0,indices] = 0
-        #print(mask)
-        #print(mask + q_vals_actions)
-        #sys.exit(0)
         return mask + q_vals_actions
     
     def update(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, exit:bool=False) -> tuple:
@@ -132,7 +123,13 @@ class DeepAgent(ABC):
         pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
-        current_Q = self.network(state)[np.arange(0, self.mem_batch_size), action]  
+        #print('cur_q_w_est state shape input:',state.shape)
+        #print(self.network)
+        pred = self.network(state)
+        #print('pred shape',pred.shape)
+        #print('arange',np.arange(0, self.mem_batch_size).shape)
+        #print('action',action)
+        current_Q = pred[np.arange(0, self.mem_batch_size), action]  
         return current_Q
 
     def update_network(self,q_w_estimate:float, q_target:float) -> float:

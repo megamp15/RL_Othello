@@ -38,7 +38,10 @@ class DQN(DeepAgent):
             self.save_model()
         
         state, action, reward, next_state, terminate = self.memory.recall()
+        #print('dqn Train state shape:',state)
+        #print('dqn Train action:',action)
         q_est = self.current_q_w_estimate(state, action)
+        #print('dqn::Train q_target rew nxt_st term',reward.shape, next_state.shape, terminate.shape)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)
         

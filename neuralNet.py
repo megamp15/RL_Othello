@@ -96,7 +96,6 @@ class StateNeuralNet(BaseNeuralNet):
 		
     """
     A deep Neural Network designed with the following layers:
-    Flatten()
     Linear(self.64, 256),
     ReLU()
     Linear(256, 128),
@@ -117,7 +116,6 @@ class StateNeuralNet(BaseNeuralNet):
 
         # Followed by Fully Connected Layers
         fc = nn.Sequential(
-            nn.Flatten(),
             nn.Linear(self.height * self.width, 256),
             nn.ReLU(),
             nn.Linear(256, 128),

@@ -263,13 +263,20 @@ class Othello():
 
         self.placeTile(coords)
         
-    def step(action:tuple[int,int])->tuple([np.ndarray,float,bool,bool]):
-        init_score = self.countScore()
-        self.placeTile(coords)
-        end_score = self.countScore()
+    def step(self,action:tuple[int,int])->tuple([np.ndarray,float,bool,bool]):
+        if self.activePlayer == PlayerTurn.Player1:
+            player_index = 0
+        else:
+            player_index = 1
+        #print('OthelloGame step: action',action)
+        #print("OthelloGame getPlayer player_index",self.activePlayer,player_index)
+        init_score = self.countScore()[player_index]
+        self.placeTile(action)
+        end_score = self.countScore()[player_index]
+        #print("step init score",init_score)
+        #print("step end score",end_score)
         reward = end_score - init_score
-        terminated = self.checkGameOver()
-        return(self.board,reward,terminated,False)
+        return(self.board,reward)
         
 
 if __name__ == '__main__':
