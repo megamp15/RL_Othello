@@ -25,7 +25,9 @@ class Othello():
     def __init__(self, player1:OthelloPlayer, player2:OthelloPlayer, board_size:tuple[int,int]=(8,8)) -> None:
         # pygame.init()
         self.board_size = np.array(board_size)
+        self.state_space = [1, 1] + list(board_size)
         self.resetBoard()
+        self.num_actions = np.prod(self.board_size) - 4
         self.player1 = player1
         self.player2 = player2
         self.activePlayer = PlayerTurn.Player1

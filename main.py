@@ -1,7 +1,5 @@
 from othello import Othello, RENDER_MODE, OBS_SPACE
 
-from othello2 import Othello2
-
 from othelloGame import Othello as OthelloGame
 from othelloPlayer import AgentPlayer
 from neuralNet import StateNeuralNet
@@ -64,9 +62,8 @@ if __name__ == '__main__':
 
     # Define agent parameters once so it's not quite so verbose
     params = {
-              #'state_shape' : environment.state_space,
-              'state_shape' : (1,1,8,8),
-              'num_actions' : 64,
+              'state_shape' : environment.state_space,
+              'num_actions' : environment.num_actions,
               'epsilon' : EPSILON,
               #'epsilon_decay_rate' : EPSILON_DECAY_RATE,
               'epsilon_decay_rate' : 0.9,
