@@ -50,7 +50,7 @@ class DeepAgent(ABC):
         self.save_path = kwargs['save_path']
 
         # Setup memory for DQN algorithm
-        self.memory = ReplayMemory(self.max_memory, 32, self.network.device)
+        self.memory = ReplayMemory(self.max_memory, 128, self.network.device)
         self.mem_batch_size = self.memory.batch_size
 
         # Current Step of the agent
@@ -65,7 +65,7 @@ class DeepAgent(ABC):
         self.skip_training = kwargs['skip_training'] # Skip the first n amount of training steps to cache experience in memory
         self.save_interval = kwargs['save_interval'] # Save the model every n steps
 
-        self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'])
+        self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'], amsgrad=True)
         self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type

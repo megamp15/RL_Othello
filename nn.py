@@ -50,7 +50,7 @@ class NeuralNet(nn.Module):
         conv = nn.Sequential(
             nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=8, stride=4),
             nn.ReLU(),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2),
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),
             nn.ReLU(),
@@ -65,8 +65,23 @@ class NeuralNet(nn.Module):
             nn.ReLU(),
             nn.Linear(512, self.output_dim)
         )
+
+        # conv = nn.Sequential(
+        #     nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=3, stride=1),
+        #     nn.ReLU(),
+        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
+        #     nn.ReLU(),
+        # )
+        # conv_out_size = self.get_conv_out_size(self.conv, self.input_dim)
+
+        # fc = nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(self.conv_out_size, 512),
+        #     nn.ReLU(),
+        #     nn.Linear(512, self.output_dim)
+        # )
         
-        return conv+fc
+        return nn.Sequential(conv,fc)
 
     def get_conv_out_size(self, conv:nn.Sequential, image_dim:tuple[int,int,int,int]) -> int:
         """
