@@ -81,14 +81,18 @@ if __name__ == '__main__':
     duelsarsa = SARSA_DuelDQN(**params)
 
 
-    # 
     """
     Training Agents:
     Set the hyperparams 
     uncomment one of the train functions and specify one of the agents
     Uncomment the logger.record_hyperparams to save the hyperparams to the log file
+    Uncomment Agent.load_model if you want to continue training from a certain saved model. 
+        The model will load the networks weights and the epsilon it left off at. Modify the epsilon if needed
     """
     AGENT = dqn
+
+    # AGENT.load_model('./trained_models/03-08-2024/19_15_54/DQN_model_2') 
+    # AGENT.epsilon = 1 # Changing the epsilon
 
     # make sure Agent is Q-Learning Agent
     train_QLearning(environment=othello, agent=AGENT, n_episodes=EPISODES, max_steps=MAX_STEPS, logger=logger)
