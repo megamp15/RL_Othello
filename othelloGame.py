@@ -241,19 +241,15 @@ class Othello():
         if current_player.mode == MoveMode.FullBoardSelect:
             self.displayBoard()
             availableMoves = self.getAvailableMoves()
-            board = self.board
-            if self.activePlayer == PlayerTurn.Player2:
-                board = -board
-            coords = current_player.selectMoveFullBoardSelect(board, availableMoves)
+            state = self.get_state()
+            coords = current_player.selectMoveFullBoardSelect(state, availableMoves)
         else:
             coords = (self.board_size-[1,1])//2
             print(f"Current Position: {coords}")
             self.displayBoard()
             availableMoves = self.getAvailableMoves(coords)
-            board = self.board
-            if self.activePlayer == PlayerTurn.Player2:
-                board = -board
-            while ((move := current_player.selectMove(board, availableMoves, coords)) != GameMove.PlaceTile):
+            state = self.get_state()
+            while ((move := current_player.selectMove(state, availableMoves, coords)) != GameMove.PlaceTile):
                 print(f"move: {move}")
                 if move not in availableMoves:
                     raise FileNotFoundError
@@ -262,18 +258,45 @@ class Othello():
                 availableMoves = self.getAvailableMoves(coords)
 
         self.placeTile(coords)
-        
-    def step(self,action:tuple[int,int])->tuple([np.ndarray,np.ndarray]):
-        #print('OthelloGame step: action',action)
-        #print("OthelloGame getPlayer player_index",self.activePlayer,player_index)
-        init_score = self.countScore()
+
+    def get_state(self, playerTurn:PlayerTurn=None) -> np.ndarray:
+        """
+        Used to return the current state of the environment for the selected player (flipped for player 2).
+        """
+        if playerTurn == None:
+            playerTurn = self.activePlayer
+        if playerTurn == PlayerTurn.Player1:
+            return self.board
+        elif playerTurn == PlayerTurn.Player2:
+            return -self.board
+        else:
+            print(f'Not a player: {playerTurn}')
+            return None
+
+    def get_reward(self, playerTurn:PlayerTurn=None) -> float|None:
+        """
+        Used to calculate the reward value for the last move performed for the selected player.
+        """
+        if playerTurn == None:
+            playerTurn = self.activePlayer
+        score = self.countScore()
+        if playerTurn == PlayerTurn.Player1:
+            return score[0]/score[1]
+        elif playerTurn == PlayerTurn.Player2:
+            return score[1]/score[0]
+        else:
+            print(f'Not a player: {playerTurn}')
+            return None
+
+    def step(self, action:tuple[int,int]) -> tuple[np.ndarray,float]:
+        """
+        Used to train agents in a similar way to the gymnasium's othello environment.
+        This only works for MoveMode.FullBoardSelect.
+        """
         self.placeTile(action)
-        end_score = self.countScore()
-        #print("step init score",init_score)
-        #print("step end score",end_score)
-        reward = np.subtract(end_score,init_score)
-        return(self.board,reward)
-        
+        state = self.get_state()
+        reward = self.get_reward()
+        return (state, reward)
 
 if __name__ == '__main__':
     mode = MoveMode.FullBoardSelect
