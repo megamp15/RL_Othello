@@ -111,16 +111,11 @@ class DeepAgent(ABC):
         """
         Updates the Q values based on the next observed state
         """
-        a_exit = False
-        if len(self.memory) > self.max_memory:
-            a_exit = True
         #print('agent:update shapes going in:')
         #print(state[0].shape,type(action),type(reward),next_state[0].shape,type(next_action),type(term))        
         self.memory.cache(state[0], action, reward, next_state[0], next_action, term)
         q_vals, loss = self.train()
-        if len(self.memory) > self.max_memory:
-            a_exit = True
-        return q_vals, loss, a_exit
+        return q_vals, loss
     
     @abstractmethod
     def train(self) -> tuple:
