@@ -21,6 +21,9 @@ class SARSA(DeepAgent):
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
         target_Qs = self.network(next_state)
+        #print('sarsa q_target',next_state.shape)
+        #print(next_action)
+        #print(next_action.dtype)
         next_Q = self.network(next_state)[
             torch.arange(0, self.mem_batch_size), next_action
         ]
@@ -36,7 +39,7 @@ class SARSA(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate, next_action = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -82,7 +85,7 @@ class SARSA_DDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate, next_action = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -126,7 +129,7 @@ class SARSA_DuelDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, terminate, next_action = self.memory.recall()
+        state, action, reward, next_state, next_action, terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
