@@ -178,28 +178,20 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
 
             availableMoves = environment.getAvailableMoves()
             action = agent.get_action(state,availableMoves)
-            #print('trainQLearningPygame action',action)
-            #print('step,',step,'legal^',availableMoves)
             next_state, reward = environment.step(action)
-            #print("reward",reward)
-            #TODO delete this, is hacky to get it running and isn't right at all
             if prev_action != None:
                 prev_action_index = getIndexFromCoords(prev_action)
 
             environment.activePlayer = environment.flipTurn(environment.activePlayer)
             terminated = environment.checkGameOver()
             
-            #We calculate reward for the passive player, to account for reward
-            #from each players turn to be associated with their action.
-            #player 1 on step 1/odd steps, player 2 on step 2/even steps.
             truncated = False
             if terminated or truncated or step >= max_steps:
                 episode_over = True
 
-            #TODO work this into a better version which accurately handles a pair of turns
-            #as a single reward with the temp rewards added together, and updates
-            #the agent about to go.
-            #print("Train state.shape into buffer",state.shape)
+            #We calculate reward for the passive player, to account for reward
+            #from each players turn to be associated with their action.
+            #player 1 on step 1/odd steps, player 2 on step 2/even steps.
             #Put in last turn's state/action with the reward over previous 2 turns
             #Because agent should receive reward from previous action to current action.
             if step > 1:
@@ -209,11 +201,16 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
                 q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, state.reshape(1,-1), episode_over)
                 logger.log_step(reward, loss, q)
                 episode_over |= a_exit
-                cumulative_reward[passive_player] += full_turn_reward
+                #cumulative_reward[passive_player] += full_turn_reward
                 
+            cumulative_reward += reward
                 
 
-          
+        #print('Cumulative reward:',cumulative_reward)
+        #print('Actual score',environment.countScore())
+        #print('reward from final move',reward)
+        #print('reward from penultimate move',prev_reward)
+        #print('current active player',environment.activePlayer)
         #if step < 60:
         #    print("episode over: current step:",step)
         #    print("ending board:",environment.board)
