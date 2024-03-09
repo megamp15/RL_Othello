@@ -202,7 +202,7 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
                 availableMoves = environment.getAvailableMoves()
                 next_action = agent.get_action(next_state,availableMoves)
                 next_action_index = getIndexFromCoords(next_action)
-                q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1), next_action_index,episode_over)
+                q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1), episode_over,next_action_index)
                 logger.log_step(reward, loss, q)
                 episode_over |= a_exit
                 

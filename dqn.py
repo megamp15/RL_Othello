@@ -39,7 +39,7 @@ class DQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, next_action, terminate = self.memory.recall()
+        state, action, reward, next_state, terminate, _ = self.memory.recall()
         #print('dqn Train state shape:',state)
         #print('dqn Train action:',action)
         q_est = self.current_q_w_estimate(state, action)
@@ -89,7 +89,7 @@ class DDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, _ ,terminate = self.memory.recall()
+        state, action, reward, next_state ,terminate, _ = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -130,7 +130,7 @@ class DuelDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, _,terminate = self.memory.recall()
+        state, action, reward, next_state, terminate, _ = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
         loss = self.update_network(q_est, q_tgt)

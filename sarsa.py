@@ -36,7 +36,7 @@ class SARSA(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, next_action, terminate = self.memory.recall()
+        state, action, reward, next_state, terminate, next_action = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -82,7 +82,7 @@ class SARSA_DDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, next_action, terminate = self.memory.recall()
+        state, action, reward, next_state, terminate, next_action = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
@@ -126,7 +126,7 @@ class SARSA_DuelDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        state, action, reward, next_state, next_action, terminate = self.memory.recall()
+        state, action, reward, next_state, terminate, next_action = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, next_action, terminate)
         loss = self.update_network(q_est, q_tgt)
