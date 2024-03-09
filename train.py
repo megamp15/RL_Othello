@@ -174,7 +174,6 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
             prev_action = action
             prev_reward = reward
             state = environment.board
-            #print("Train state.shape start",state.shape)
 
             availableMoves = environment.getAvailableMoves()
             action = agent.get_action(state,availableMoves)
@@ -197,25 +196,13 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
             if step > 1:
                 passive_player = (step + 1) % 2
                 full_turn_reward = reward[passive_player] + prev_reward[passive_player]
-                #print("full turn reward",full_turn_reward)
                 q, loss, a_exit = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, state.reshape(1,-1), episode_over)
                 logger.log_step(reward, loss, q)
                 episode_over |= a_exit
-                #cumulative_reward[passive_player] += full_turn_reward
                 
             cumulative_reward += reward
                 
 
-        #print('Cumulative reward:',cumulative_reward)
-        #print('Actual score',environment.countScore())
-        #print('reward from final move',reward)
-        #print('reward from penultimate move',prev_reward)
-        #print('current active player',environment.activePlayer)
-        #if step < 60:
-        #    print("episode over: current step:",step)
-        #    print("ending board:",environment.board)
-        #    print("legal moves left:",environment.getAvailableMoves())
-        #    print('cumulative reward of premature game',cumulative_reward_p1)
         rewards[0].append(cumulative_reward[0])
         rewards[1].append(cumulative_reward[1])
         loss_record.append(loss)
