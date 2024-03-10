@@ -4,9 +4,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-import time
-import gymnasium as gym
-import os
 from enum import Enum
 import random
 from abc import ABC, abstractmethod
@@ -126,7 +123,9 @@ class DeepAgent(ABC):
     
     @abstractmethod
     def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
-        self.memory.cache(state, action, reward, next_state, next_action, terminate)
+        action_idx = getIndexFromCoords(action)
+        next_action_idx = getIndexFromCoords(next_action)
+        self.memory.cache(state, action_idx, reward, next_state, next_action_idx, terminate)
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
         #print('cur_q_w_est state shape input:',state.shape)

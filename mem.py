@@ -13,7 +13,7 @@ class ReplayMemory():
         self.memory = TensorDictReplayBuffer(storage=LazyMemmapStorage(capacity, device=device))
         self.batch_size = batch_size
 
-    def cache(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, terminate:int, next_action:int=None):
+    def cache(self, state:np.ndarray, action:int, reward:int, next_state:np.ndarray, next_action:int, terminate:int):
         """
         Add (s, a, r, s') to memory
         """
