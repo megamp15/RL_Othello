@@ -35,6 +35,7 @@ class Othello(Environment):
         self.activePlayer = PlayerTurn.Player1
         self.last_state = None
         self.reward = 0
+        self.last_score = (0,0)
 
     def reset(self) -> None:
         """
@@ -281,22 +282,18 @@ class Othello(Environment):
             print(f'Not a player: {playerTurn}')
             return None
 
-    def getReward(self, playerTurn:PlayerTurn=None) -> float:
+    def getReward(self, playerTurn:PlayerTurn=None, score:tuple[int,int]=None) -> float:
         """
         Used to calculate the reward value for the last move performed for the selected player.
         """
         if playerTurn == None:
             playerTurn = self.activePlayer
-        score = self.countScore()
-        turns = np.sum(self.board != PlayerTurn.NoPlayer.value) - 4
+        if score == None:
+            score = self.countScore()
         if playerTurn == PlayerTurn.Player1:
-            if score[0] > score[1]:
-                turns = 1/turns
-            return score[0]/(score[1]*turns + .000001)
+            return score[0]/(score[1] + .000001)
         elif playerTurn == PlayerTurn.Player2:
-            if score[0] < score[1]:
-                turns = 1/turns
-            return score[1]/(score[0]*turns + .000001)
+            return score[1]/(score[0] + .000001)
         else:
             print(f'Not a player: {playerTurn}')
             return None
@@ -308,56 +305,20 @@ class Othello(Environment):
         """
         self.last_state = self.getState()
         if self.checkGameOver():
-            self.reward = self.getReward()
+            last_reward = self.getReward(score=self.last_score)
+            self.reward = self.getReward() - last_reward
+            self.last_score = self.countScore()
             self.activePlayer = self.flipTurn()
             return True
         self.placeTile(action)
-        self.reward = self.getReward()
+        last_reward = self.getReward(score=self.last_score)
+        self.reward = self.getReward() - last_reward
+        self.last_score = self.countScore()
         self.activePlayer = self.flipTurn()
         return self.checkGameOver()
 
 if __name__ == '__main__':
-    mode = MoveMode.FullBoardSelect
-    player1 = AgentPlayer(mode,agent=None)
-    player2 = AgentPlayer(mode,agent=None)
+    player1 = HumanPlayer(MoveMode.FullBoardSelect)
+    player2 = HumanPlayer(MoveMode.FullBoardSelect)
     game = Othello(player1,player2,(8,8))
-    #state_shape = (1,1,8,8)
-    #state_shape = (1,1,10,10)
-    #Params stolen from othello.py to get it running.
-    # AGENT PARAMS
-    EPSILON = .75
-    EPSILON_DECAY_RATE = 0.99
-    EPSILON_MIN = 0.01
-    ALPHA = 0.01
-    GAMMA = 0.9
-    SKIP_TRAINING = 1_000
-    SAVE_INTERVAL = 500
-    SYNC_INTERVAL = 250
-    
-    # TRAINING PARAMS
-    EPISODES = 1
-    MAX_STEPS = 10_000
-
-    num_actions=60
-    
-    # Define agent parameters once so it's not quite so verbose
-    params = {'state_shape' : environment.state_space,
-              'num_actions' : environment.num_actions,
-              'epsilon' : EPSILON,
-              'epsilon_decay_rate' : EPSILON_DECAY_RATE,
-              'epsilon_min' : EPSILON_MIN,
-              'alpha' : ALPHA,
-              'gamma' : GAMMA,
-              'sync_interval' : SYNC_INTERVAL,
-              'skip_training' : SKIP_TRAINING,
-              'save_interval' : SAVE_INTERVAL,
-              'max_memory' : MEMORY_CAPACITY,
-              'save_path' : save_model_path
-              }
-    p1_dqn = DQN(env=game, state_shape=state_shape, net_type=StateNeuralNet, num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL,max_memory=10_000,save_path='./DQN/test.junk')
-    p2_dqn = DQN(env=game, state_shape=state_shape, net_type=StateNeuralNet,num_actions=num_actions, epsilon=EPSILON, epsilon_decay_rate=EPSILON_DECAY_RATE, epsilon_min=EPSILON_MIN, alpha=ALPHA, gamma=GAMMA, skip_training=SKIP_TRAINING, save_interval=SAVE_INTERVAL,sync_interval=SYNC_INTERVAL,max_memory=10_000,save_path='./DQN/test.junk')
-    player1.setAgent(p1_dqn)    
-    player2.setAgent(p2_dqn)
-    # The available moves at (3,3) are north and east
-    # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     game.startGame()

@@ -10,7 +10,7 @@ from othelloUtil import *
 from environment import Environment
 
 
-def train_QLearning(environment:Environment, agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
+def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
     rewards = []
     loss_record = []
     q_record = []
@@ -29,6 +29,15 @@ def train_QLearning(environment:Environment, agent:DeepAgent, n_episodes:int, ma
             terminate = environment.step(action)
             if terminate:
                 break
+
+            # Player 2 "dummy" player
+            dummy_state = environment.getState()
+            dummy_available_moves = environment.getAvailableMoves()
+            dummy_action = dummy_agent.get_action(dummy_state,dummy_available_moves)
+            terminate = environment.step(dummy_action)
+            if terminate:
+                break
+
             next_state = environment.getState()
             reward = environment.getReward()
 
@@ -190,7 +199,8 @@ def train_QLearning_pygame(environment:Environment, agent:DeepAgent, n_episodes:
                 availableMoves = environment.getAvailableMoves()
                 next_action = agent.get_action(next_state,availableMoves)
                 next_action_index = getIndexFromCoords(next_action)
-                q, loss = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1), episode_over,next_action_index)
+                q, loss = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1),
+                                       episode_over,next_action_index)
                 logger.log_step(reward, loss, q)
                 
             cumulative_reward += reward

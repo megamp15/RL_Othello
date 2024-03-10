@@ -38,14 +38,14 @@ save_recordings_path.mkdir(parents=True, exist_ok=True)
 EPSILON = 1
 EPSILON_DECAY_RATE = 0.99999975
 EPSILON_MIN = 0.1
-ALPHA = 0.01 #0.00025
+ALPHA = 0.00025
 GAMMA = 0.9
 SKIP_TRAINING = 100
 SAVE_INTERVAL = 100
-SYNC_INTERVAL = 10_000
+SYNC_INTERVAL = 100
 
 # TRAINING PARAMS
-EPISODES = 1_000
+EPISODES = 10_000
 MAX_STEPS = 60
 
 MEMORY_CAPACITY = 100_000
@@ -73,7 +73,6 @@ def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
 
 
 if __name__ == '__main__':
-    
     for env in [setup_pygame_env()]:
         params = {
             'net_type' : StateNeuralNet,
@@ -91,9 +90,26 @@ if __name__ == '__main__':
             'save_path' : save_model_path,
             'batch_size' : BATCH_SIZE
             }
+        dummy_params = {
+            'net_type' : StateNeuralNet,
+            'state_shape' : env.state_space,
+            'num_actions' : env.num_actions,
+            'epsilon' : 1,
+            'epsilon_decay_rate' : 1,
+            'epsilon_min' : 1,
+            'alpha' : ALPHA,
+            'gamma' : GAMMA,
+            'sync_interval' : int(1e24),
+            'skip_training' : int(1e24),
+            'save_interval' : int(1e24),
+            'max_memory' : MEMORY_CAPACITY,
+            'save_path' : save_model_path,
+            'batch_size' : BATCH_SIZE
+            }
         agents = setup_agents(**params)
-        # train_QLearning(env, agents[0], EPISODES, MAX_STEPS, logger)
-        for agent in agents:
-            train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
+        dummy_agents = setup_agents(**dummy_params)
+        train_QLearning(env, agents[0], dummy_agents[0], EPISODES, MAX_STEPS, logger)
+        # for agent in agents:
+        #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
             # test_agent(env, agent)
     
