@@ -30,7 +30,7 @@ class SARSA(DeepAgent):
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
     
-    def train(self) -> tuple:
+    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
         """
         Model learning/optimization
         """
@@ -55,7 +55,7 @@ class SARSA_DDQN(DeepAgent):
         # super().__init__(AgentType.DSARSA, state_shape, num_actions, epsilon, epsilon_decay_rate, epsilon_min, alpha, gamma,
         #                sync_interval, skip_training, save_interval, max_memory, loss_function)
         super().__init__(agent_type=AgentType.DSARSA,**kwargs)
-        self.target_net = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
+        self.target_net = self.net_type(kwargs['batch_size'], kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
         # # Q_target parameters are frozen.
@@ -74,7 +74,7 @@ class SARSA_DDQN(DeepAgent):
     def sync_w_to_target_net(self) -> None:
         self.target_net.load_state_dict(self.network.state_dict())
         
-    def train(self) -> tuple:
+    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
         """
         Model learning/optimization
         """
@@ -102,7 +102,7 @@ class SARSA_DuelDQN(DeepAgent):
         #                sync_interval, skip_training, save_interval, max_memory, loss_function)
         super().__init__(AgentType.DUELSARSA, **kwargs)
         
-        self.value_net = self.net_type(kwargs['state_shape'], 1)
+        self.value_net = self.net_type(kwargs['batch_size'], kwargs['state_shape'], 1)
         self.advantage_net = self.network
         
         
@@ -120,7 +120,7 @@ class SARSA_DuelDQN(DeepAgent):
         return (reward + self.gamma * next_Q*not_done).float()
 
     
-    def train(self) -> tuple:
+    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
         """
         Model learning/optimization
         """

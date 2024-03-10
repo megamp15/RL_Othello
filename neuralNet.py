@@ -7,11 +7,12 @@ class BaseNeuralNet(nn.Module,ABC):
     """
     A neural network base class for different types of neural networks used.
     """
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, batch_size, input_dim, output_dim):
         super().__init__()
 
         self.input_dim = input_dim
-        self.batch_size, self.channel, self.height, self.width = self.input_dim
+        self.batch_size = batch_size
+        self.channel, self.height, self.width = self.input_dim
         self.output_dim = output_dim
         self.device = self.device()
         # print(f"input_dim: {input_dim}, output_dim: {output_dim}")
