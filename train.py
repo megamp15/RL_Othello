@@ -61,6 +61,7 @@ def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAg
 
         logger.record(episode=e, epsilon=agent.epsilon, step=t)
 
+    agent.save_model()
     print(f"Rewards: {rewards}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")
@@ -121,6 +122,7 @@ def train_SARSA(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent,
 
         logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
 
+    agent.save_model()
     print(f"Rewards: {rewards}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")  
