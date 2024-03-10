@@ -80,8 +80,8 @@ class DeepAgent(ABC):
 
     def get_action(self, state:np.ndarray, available_moves:list) -> tuple[int,int]:
         if available_moves == None or (isinstance(available_moves,list) and len(available_moves) == 0):
-            print('No available moves.')
-            return None
+            #print('No available moves.')
+            return (0,0)
         if random.random() < self.epsilon:
             action = random.choice(available_moves)
         else:
@@ -122,10 +122,8 @@ class DeepAgent(ABC):
         return q_vals, loss
     
     @abstractmethod
-    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
-        action_idx = getIndexFromCoords(action)
-        next_action_idx = getIndexFromCoords(next_action)
-        self.memory.cache(state, action_idx, reward, next_state, next_action_idx, terminate)
+    def train(self) -> tuple:
+        pass
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
         #print('cur_q_w_est state shape input:',state.shape)

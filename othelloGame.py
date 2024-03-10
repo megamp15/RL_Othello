@@ -35,6 +35,7 @@ class Othello(Environment):
         self.activePlayer = PlayerTurn.Player1
         self.last_state = None
         self.reward = 0
+        self.last_score = (2,2)
 
     def reset(self) -> None:
         """
@@ -47,6 +48,9 @@ class Othello(Environment):
         self.board[half_size[0]-1,half_size[1]] = PlayerTurn.Player1.value
         self.board[half_size[0],half_size[1]-1] = PlayerTurn.Player1.value
         self.activePlayer = PlayerTurn.Player1
+        
+    def resetBoard(self):
+        self.reset()
     
     def displayBoard(self) -> None:
         """
@@ -224,6 +228,9 @@ class Othello(Environment):
             directionMoves = getDirectionMoves_4()
         else:
             moves = np.array(np.where(self.findAvailableTilePlacements(selectedPlayer))).T
+            #print("getAvailMovs")
+            #print(self.getState())
+            #print(moves)
             return [tuple(x) for x in moves]
 
         coords = np.array(coords)
@@ -285,21 +292,15 @@ class Othello(Environment):
         """
         Used to calculate the reward value for the last move performed for the selected player.
         """
-        if playerTurn == None:
-            playerTurn = self.activePlayer
-        score = self.countScore()
-        turns = np.sum(self.board != PlayerTurn.NoPlayer.value) - 4
-        if playerTurn == PlayerTurn.Player1:
-            if score[0] > score[1]:
-                turns = 1/turns
-            return score[0]/(score[1]*turns + .000001)
-        elif playerTurn == PlayerTurn.Player2:
-            if score[0] < score[1]:
-                turns = 1/turns
-            return score[1]/(score[0]*turns + .000001)
-        else:
-            print(f'Not a player: {playerTurn}')
-            return None
+        current_score = self.countScore()
+        last_score = self.last_score
+        diff =  np.subtract(current_score,last_score)
+        #print("env step prev score",last_score)
+        #print("env step now score",current_score)
+        #print("env:getreward")
+        #print(diff)
+        return diff
+        
 
     def step(self, action:int) -> bool:
         """
@@ -307,14 +308,15 @@ class Othello(Environment):
         This only works for MoveMode.FullBoardSelect.
         """
         self.last_state = self.getState()
+        self.last_score = self.countScore()
         if self.checkGameOver():
             self.reward = self.getReward()
             self.activePlayer = self.flipTurn()
-            return True
+            return self.getState(),self.reward
         self.placeTile(action)
         self.reward = self.getReward()
         self.activePlayer = self.flipTurn()
-        return self.checkGameOver()
+        return self.getState(),self.reward
 
 if __name__ == '__main__':
     mode = MoveMode.FullBoardSelect

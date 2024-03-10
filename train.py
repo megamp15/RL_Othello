@@ -160,19 +160,19 @@ def train_QLearning_pygame(environment:Environment, agent:DeepAgent, n_episodes:
             prev_state = state
             prev_action = action
             prev_reward = reward
-            state = environment.board
-            if step%2 == 0:
-                state = -state
+            state = environment.getState()
+            #if step%2 == 0:
+            #    state = -state
 
             availableMoves = environment.getAvailableMoves()
             action = agent.get_action(state,availableMoves)
             next_state, reward = environment.step(action)
-            if step%2 == 1:
-                next_state = -next_state
+            #print("step reward",step,reward)
+            #if step%2 == 1:
+            #    next_state = -next_state
             if prev_action != None:
                 prev_action_index = getIndexFromCoords(prev_action)
 
-            environment.activePlayer = environment.flipTurn(environment.activePlayer)
             terminated = environment.checkGameOver()
             
             truncated = False
@@ -195,7 +195,6 @@ def train_QLearning_pygame(environment:Environment, agent:DeepAgent, n_episodes:
                 
             cumulative_reward += reward
                 
-
         rewards[0].append(cumulative_reward[0])
         rewards[1].append(cumulative_reward[1])
         loss_record.append(loss)
