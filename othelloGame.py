@@ -36,6 +36,7 @@ class Othello(Environment):
         self.last_state = None
         self.reward = 0
         self.last_score = (0,0)
+        self.last_last_score = (0,0)
 
     def reset(self) -> None:
         """
@@ -305,14 +306,16 @@ class Othello(Environment):
         """
         self.last_state = self.getState()
         if self.checkGameOver():
-            last_reward = self.getReward(score=self.last_score)
+            last_reward = self.getReward(score=self.last_last_score)
             self.reward = self.getReward() - last_reward
+            self.last_last_score = self.last_score
             self.last_score = self.countScore()
             self.activePlayer = self.flipTurn()
             return True
         self.placeTile(action)
-        last_reward = self.getReward(score=self.last_score)
+        last_reward = self.getReward(score=self.last_last_score)
         self.reward = self.getReward() - last_reward
+        self.last_last_score = self.last_score
         self.last_score = self.countScore()
         self.activePlayer = self.flipTurn()
         return self.checkGameOver()
