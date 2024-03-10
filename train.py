@@ -118,7 +118,7 @@ def train_SARSA(environment, agent:DeepAgent, n_episodes:int, max_steps:int, log
     print(f"Q_record: {q_record}")  
     
     
-def train_QLearning_pygame(environment:Environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+def train_QLearning_pygame(environment:Environment, agent:DeepAgent, n_episodes:int, max_steps:int,logger:MetricLogger) -> None:
     '''
     Train function for the othelloGame environment
 
