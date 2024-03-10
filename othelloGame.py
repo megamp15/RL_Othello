@@ -29,7 +29,7 @@ class Othello(Environment):
         self.board_size = np.array(board_size)
         self.state_space = [1] + list(board_size)
         self.reset()
-        self.num_actions = np.prod(self.board_size) - 4
+        self.num_actions = np.prod(self.board_size)
         self.player1 = player1
         self.player2 = player2
         self.activePlayer = PlayerTurn.Player1
@@ -159,7 +159,7 @@ class Othello(Environment):
              np.sum(self.board == PlayerTurn.Player2.value) == 0:
             return True
         # The next player has no available positions to place a tile
-        elif np.sum(self.findAvailableTilePlacements(self.flipTurn())) == 0:
+        elif np.sum(self.findAvailableTilePlacements()) == 0:
             return True
         else:
             return False
@@ -288,10 +288,15 @@ class Othello(Environment):
         if playerTurn == None:
             playerTurn = self.activePlayer
         score = self.countScore()
+        turns = np.sum(self.board != PlayerTurn.NoPlayer.value) - 4
         if playerTurn == PlayerTurn.Player1:
-            return score[0]/(score[1] + .000001)
+            if score[0] > score[1]:
+                turns = 1/turns
+            return score[0]/(score[1]*turns + .000001)
         elif playerTurn == PlayerTurn.Player2:
-            return score[1]/(score[0] + .000001)
+            if score[0] < score[1]:
+                turns = 1/turns
+            return score[1]/(score[0]*turns + .000001)
         else:
             print(f'Not a player: {playerTurn}')
             return None
@@ -302,7 +307,10 @@ class Othello(Environment):
         This only works for MoveMode.FullBoardSelect.
         """
         self.last_state = self.getState()
-        # action = getCoordsFromIndex(action)
+        if self.checkGameOver():
+            self.reward = self.getReward()
+            self.activePlayer = self.flipTurn()
+            return True
         self.placeTile(action)
         self.reward = self.getReward()
         self.activePlayer = self.flipTurn()

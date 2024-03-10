@@ -90,8 +90,9 @@ class DeepAgent(ABC):
         else:
             state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
             q_vals_actions = self.network(state)
-            q_vals_actions = self.clamp_illegal_actions(q_vals_actions,available_moves)
-            action = torch.argmax(q_vals_actions).item()
+            action = self.clamp_illegal_actions(q_vals_actions,available_moves)
+            # q_vals_actions = self.clamp_illegal_actions(q_vals_actions,available_moves)
+            # action = torch.argmax(q_vals_actions).item()
             # action = getCoordsFromIndex(action)
 
         self.decay_epsilon()
@@ -99,7 +100,15 @@ class DeepAgent(ABC):
 
         return action
     
-    def clamp_illegal_actions(self,q_vals_actions:torch.tensor,available_moves:list)->None:
+    def clamp_illegal_actions(self,q_vals_actions:torch.tensor,available_moves:list)->tuple[int,int]|None:
+        if len(available_moves) == 0:
+            return None
+        q_vals = q_vals_actions.tolist()[0]
+        available_q_vals = [q_vals[getIndexFromCoords(m)] for m in available_moves]
+        max_q_idx = available_q_vals.index(max(available_q_vals))
+        max_q_move = available_moves[max_q_idx]
+        return max_q_move
+        # return [m in q_vals_actions if m in]
         mask = torch.ones_like(q_vals_actions) * float('-inf')
         indices = [getIndexFromCoords(m) for m in available_moves]
         mask[0,indices] = 0

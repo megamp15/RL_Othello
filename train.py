@@ -15,18 +15,20 @@ def train_QLearning(environment:Environment, agent:DeepAgent, n_episodes:int, ma
     loss_record = []
     q_record = []
     # Repeat (for each episode)
-    for e in trange(n_episodes):
+    for e in trange(n_episodes, unit='episode'):
         # Initalize S
         environment.reset()
         state = environment.getState()
         cumulative_reward = 0
-        for t in trange(max_steps):
+        for t in trange(max_steps, unit='turn', leave=False):
             # Choose A from S using policy
             available_moves = environment.getAvailableMoves()
             action = agent.get_action(state, available_moves)
 
             # Take action A, observe R, S'
             terminate = environment.step(action)
+            if terminate:
+                break
             next_state = environment.getState()
             reward = environment.getReward()
 
@@ -43,8 +45,6 @@ def train_QLearning(environment:Environment, agent:DeepAgent, n_episodes:int, ma
             state = environment.getState()
             cumulative_reward += reward
 
-            if terminate:
-                break
         rewards.append(cumulative_reward)
         loss_record.append(loss)
         q_record.append(q)
