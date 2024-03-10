@@ -42,14 +42,14 @@ ALPHA = 0.00025
 GAMMA = 0.9
 SKIP_TRAINING = 100
 SAVE_INTERVAL = 100
-SYNC_INTERVAL = 100
+SYNC_INTERVAL = 10_000
 
 # TRAINING PARAMS
-EPISODES = 10_000
+EPISODES = 3_000
 MAX_STEPS = 60
 
 MEMORY_CAPACITY = 100_000
-BATCH_SIZE = 16
+BATCH_SIZE = 64
 
 def setup_gym_env() -> Environment:
     othello = Othello(render_mode=RENDER_MODE.RGB, observation_type=OBS_SPACE.GRAY, record_video=False,
