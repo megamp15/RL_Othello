@@ -29,14 +29,14 @@ save_model_path.mkdir(parents=True, exist_ok=True)
 # Logs saving path
 save_logs_path = Path("logs") / date / t
 save_logs_path.mkdir(parents=True, exist_ok=True)
-logger = MetricLogger(save_logs_path)
+logger = MetricLogger(save_logs_path, 10)
 
 save_recordings_path = Path("recordings") / date / t
 save_recordings_path.mkdir(parents=True, exist_ok=True)
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.9999975
+EPSILON_DECAY_RATE = 0.999975
 EPSILON_MIN = 0.1
 ALPHA = 0.00025
 GAMMA = 0.9
