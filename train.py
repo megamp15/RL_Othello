@@ -26,15 +26,7 @@ def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAg
             action = agent.get_action(state, available_moves)
 
             # Take action A, observe R, S'
-            terminate = environment.step(action)
-            if terminate:
-                break
-
-            # Player 2 "dummy" player
-            dummy_state = environment.getState()
-            dummy_available_moves = environment.getAvailableMoves()
-            dummy_action = dummy_agent.get_action(dummy_state,dummy_available_moves)
-            terminate = environment.step(dummy_action)
+            terminate = environment.step(action, dummy_agent)
             if terminate:
                 break
 
@@ -85,15 +77,7 @@ def train_SARSA(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent,
         # Repeat (for each step of episode)
         for t in trange(max_steps, unit='turn', leave=False):
             # Take action A, observe R, S'
-            terminate = environment.step(action)
-            if terminate:
-                break
-            
-            # Player 2 "dummy" player
-            dummy_state = environment.getState()
-            dummy_available_moves = environment.getAvailableMoves()
-            dummy_action = dummy_agent.get_action(dummy_state,dummy_available_moves)
-            terminate = environment.step(dummy_action)
+            terminate = environment.step(action, dummy_agent)
             if terminate:
                 break
 
