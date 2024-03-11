@@ -42,7 +42,7 @@ class DeepAgent(ABC):
     def __init__(self, agent_type:AgentType, net_type:BaseNeuralNet, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
         # The Neural Networks for The main Q network and the target network
         self.net_type = net_type
-        self.network : BaseNeuralNet = self.net_type(kwargs['batch_size'], kwargs['state_shape'], kwargs['num_actions'])
+        self.network : BaseNeuralNet = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         self.num_actions = kwargs['num_actions']
         self.max_memory = kwargs['max_memory']
 
@@ -50,7 +50,7 @@ class DeepAgent(ABC):
         self.save_path = kwargs['save_path']
 
         # Setup memory for DQN algorithm
-        self.memory = ReplayMemory(self.max_memory, 128, self.network.device)
+        self.memory = ReplayMemory(self.max_memory, kwargs['batch_size'], self.network.device)
         self.mem_batch_size = self.memory.batch_size
 
         # Current Step of the agent
@@ -83,6 +83,7 @@ class DeepAgent(ABC):
         if random.random() < self.epsilon:
             action = random.choice(available_moves)
         else:
+            state = np.expand_dims(state, axis=0)
             state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
             q_vals_actions = self.network(state)
             action = self.clamp_illegal_actions(q_vals_actions,available_moves)

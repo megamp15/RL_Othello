@@ -132,7 +132,7 @@ class Othello(Environment):
         # OBS_TYPE = GRAY
         else:
             # Crop 
-            obs_cropped = obs[4:-4, 3:-4, :] # 53 x 40
+            obs_cropped = obs[4:-4, 3:-4] # 53 x 40
             # obs_cropped = obs[8:-7, 6:-8] # 105 x 80
             if show_state:
                 plt.imshow(obs_cropped)
