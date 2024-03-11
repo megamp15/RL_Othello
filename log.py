@@ -8,7 +8,7 @@ import os
 
 class MetricLogger:
     def __init__(self, save_dir:str, window_size:int):
-        self.save_log = save_dir / "log.csv"
+        self.save_log = save_dir + "/log.csv"
 
         os.makedirs(save_dir)
         with open(self.save_log, "w") as f:
