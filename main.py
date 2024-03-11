@@ -13,7 +13,7 @@ from train import train_QLearning, train_SARSA
 from test import test_agent
 from environment import Environment
 from agent import DeepAgent, AgentParams
-from neuralNet import StateNeuralNet
+from neuralNet import StateNeuralNet, PixelNeuralNet
 
 import time
 from log import MetricLogger
