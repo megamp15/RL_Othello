@@ -69,8 +69,8 @@ class Othello(Environment):
     def getReward(self) -> float:
         return self.reward
     
-    def getAvailableMoves(self) -> list:
-        return self.env.action_space
+    def getAvailableMoves(self) -> list[int]:
+        return [a for a in range(self.env.action_space.n)]
 
     def setup_env(self) -> gym.Env:
         """
