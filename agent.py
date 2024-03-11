@@ -92,11 +92,11 @@ class DeepAgent(ABC):
 
         return action
     
-    def clamp_illegal_actions(self,q_vals_actions:torch.Tensor,available_moves:list)->tuple[int,int]|None:
+    def clamp_illegal_actions(self,q_vals_actions:torch.Tensor,available_moves:list)->int|None:
         if len(available_moves) == 0:
             return None
         q_vals = q_vals_actions.tolist()[0]
-        available_q_vals = [q_vals[getIndexFromCoords(m)] for m in available_moves]
+        available_q_vals = [q_vals[m] for m in available_moves]
         max_q_idx = available_q_vals.index(max(available_q_vals))
         max_q_move = available_moves[max_q_idx]
         return max_q_move
