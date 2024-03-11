@@ -15,7 +15,6 @@ from environment import Environment
 from agent import DeepAgent, AgentParams
 from neuralNet import StateNeuralNet
 
-from pathlib import Path
 import time
 from log import MetricLogger
 
@@ -23,16 +22,13 @@ date = time.strftime('%m-%d-%Y')
 t = time.strftime('%H_%M_%S')
 
 # Model saving path
-save_model_path = Path("trained_models") / date / t
-save_model_path.mkdir(parents=True, exist_ok=True)
+save_model_path = f'trained_models/{date}/{t}'
 
 # Logs saving path
-save_logs_path = Path("logs") / date / t
-save_logs_path.mkdir(parents=True, exist_ok=True)
+save_logs_path = f'logs/{date}/{t}'
 logger = MetricLogger(save_logs_path, 10)
 
-save_recordings_path = Path("recordings") / date / t
-save_recordings_path.mkdir(parents=True, exist_ok=True)
+save_recordings_path = f'recordings/{date}/{t}'
 
 # AGENT PARAMS
 EPSILON = 1
