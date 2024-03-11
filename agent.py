@@ -111,9 +111,9 @@ class DeepAgent(ABC):
     
     @abstractmethod
     def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
-        action_idx = getIndexFromCoords(action)
-        next_action_idx = getIndexFromCoords(next_action)
-        self.memory.cache(state, action_idx, reward, next_state, next_action_idx, terminate)
+        # action_idx = getIndexFromCoords(action)
+        # next_action_idx = getIndexFromCoords(next_action)
+        self.memory.cache(state, action, reward, next_state, next_action, terminate)
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
         pred = self.network(state)
