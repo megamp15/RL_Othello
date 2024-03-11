@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange
 
+from environment import Environment
 
 
 class OBS_SPACE(Enum):
@@ -32,7 +33,7 @@ class RENDER_MODE(Enum):
     HUMAN = "human"
     RGB = "rgb_array"
 
-class Othello():
+class Othello(Environment):
     """
     The environment for Othello that wraps the Gymnasium Atari Environment
     """
@@ -45,8 +46,31 @@ class Othello():
 
         obs, _ = self.env.reset()
         obs = self.preprocess_obs(obs)
+        self.last_state = None
+        self.current_state = obs
         self.state_space = obs.shape
         self.num_actions = self.env.action_space.n
+    
+    def getState(self) -> np.ndarray:
+        return self.current_state
+    
+    def reset(self) -> None:
+        self.last_state = self.current_state
+        obs, _ = self.env.reset()
+        self.current_state = self.preprocess_obs(obs)
+    
+    def step(self, action:int) -> bool:
+        obs, reward, terminated, truncated, _ = self.env.step(action)
+        self.last_state = self.current_state
+        self.current_state = self.preprocess_obs(obs)
+        self.reward = reward
+        return terminated | truncated
+    
+    def getReward(self) -> float:
+        return self.reward
+    
+    def getAvailableMoves(self) -> list:
+        return self.env.action_space
 
     def setup_env(self) -> gym.Env:
         """
@@ -116,4 +140,11 @@ class Othello():
             obs_cropped = np.expand_dims(obs_cropped, axis=0)
         # Add another dimension in front for batch size
         retval = np.expand_dims(obs_cropped, axis=0)
+
+        
+        if self.obs_type == OBS_SPACE.GRAY:
+            retval = retval[0]
+        else:
+            retval = retval.squeeze()
+
         return retval

@@ -1,9 +1,16 @@
 # import pygame
 import numpy as np
 from enum import Enum
-from othelloPlayer import OthelloPlayer, HumanPlayer
+from othelloPlayer import OthelloPlayer, HumanPlayer,AgentPlayer
 from othelloUtil import *
+from dqn import DDQN,DQN,DuelDQN
 import itertools
+from tqdm import trange
+
+from neuralNet import PixelNeuralNet,StateNeuralNet
+from agent import DeepAgent
+
+from environment import Environment
 
 class PlayerTurn(Enum):
     """
@@ -13,19 +20,25 @@ class PlayerTurn(Enum):
     Player2 = -1
     NoPlayer = 0
 
-class Othello():
+class Othello(Environment):
     """
     An Othello (Reversi) game that can be played by humans and AI alike, or for training RL agents how to play!
     """
     def __init__(self, player1:OthelloPlayer, player2:OthelloPlayer, board_size:tuple[int,int]=(8,8)) -> None:
         # pygame.init()
         self.board_size = np.array(board_size)
-        self.resetBoard()
+        self.state_space = [1] + list(board_size)
+        self.reset()
+        self.num_actions = np.prod(self.board_size)
         self.player1 = player1
         self.player2 = player2
         self.activePlayer = PlayerTurn.Player1
+        self.last_state = None
+        self.reward = 0
+        self.last_score = (0,0)
+        self.last_last_score = (0,0)
 
-    def resetBoard(self) -> None:
+    def reset(self) -> None:
         """
         Resets the board to the initial game state
         """
@@ -35,6 +48,7 @@ class Othello():
         self.board[half_size[0]-1,half_size[1]-1] = PlayerTurn.Player2.value
         self.board[half_size[0]-1,half_size[1]] = PlayerTurn.Player1.value
         self.board[half_size[0],half_size[1]-1] = PlayerTurn.Player1.value
+        self.activePlayer = PlayerTurn.Player1
     
     def displayBoard(self) -> None:
         """
@@ -46,7 +60,7 @@ class Othello():
         """
         Starts a new game of Othello
         """
-        self.resetBoard()
+        self.reset()
         print("Game started.")
         while not self.checkGameOver():
             self.takeTurn()
@@ -92,12 +106,14 @@ class Othello():
         if selectedPlayer == None:
             selectedPlayer = self.activePlayer
         # Check if the current coords has no tile, then flip applicable tiles and place new one
-        if self.board[*coords] == PlayerTurn.NoPlayer.value:
+        if self.board[coords[0],coords[1]] == PlayerTurn.NoPlayer.value:
             mask = self.findFlippableTiles(coords,selectedPlayer)
             self.board[mask] = -self.board[mask]
-            self.board[*coords] = selectedPlayer.value
+            self.board[coords[0],coords[1]] = selectedPlayer.value
         else:
-            raise FileNotFoundError
+            print(f'Not a valid move: {coords}')
+            self.displayBoard()
+            exit(1)
         
     def findFlippableTiles(self,coords:tuple[int,int],selectedPlayer:PlayerTurn=None) -> np.ndarray[bool,bool]:
         """
@@ -144,7 +160,7 @@ class Othello():
         elif np.sum(self.board == PlayerTurn.Player1.value) == 0 or \
              np.sum(self.board == PlayerTurn.Player2.value) == 0:
             return True
-        # The active player has no available positions to place a tile
+        # The next player has no available positions to place a tile
         elif np.sum(self.findAvailableTilePlacements()) == 0:
             return True
         else:
@@ -235,19 +251,15 @@ class Othello():
         if current_player.mode == MoveMode.FullBoardSelect:
             self.displayBoard()
             availableMoves = self.getAvailableMoves()
-            board = self.board
-            if self.activePlayer == PlayerTurn.Player2:
-                board = -board
-            coords = current_player.selectMove(board, availableMoves)
+            state = self.getState()
+            coords = current_player.selectMoveFullBoardSelect(state, availableMoves)
         else:
             coords = (self.board_size-[1,1])//2
             print(f"Current Position: {coords}")
             self.displayBoard()
             availableMoves = self.getAvailableMoves(coords)
-            board = self.board
-            if self.activePlayer == PlayerTurn.Player2:
-                board = -board
-            while ((move := current_player.selectMove(board, availableMoves, coords)) != GameMove.PlaceTile):
+            state = self.getState()
+            while ((move := current_player.selectMove(state, availableMoves, coords)) != GameMove.PlaceTile):
                 print(f"move: {move}")
                 if move not in availableMoves:
                     raise FileNotFoundError
@@ -257,10 +269,59 @@ class Othello():
 
         self.placeTile(coords)
 
+    def getState(self, playerTurn:PlayerTurn=None) -> np.ndarray:
+        """
+        Used to return the current state of the environment for the selected player (flipped for player 2).
+        """
+        if playerTurn == None:
+            playerTurn = self.activePlayer
+        if playerTurn == PlayerTurn.Player1:
+            return self.board
+        elif playerTurn == PlayerTurn.Player2:
+            return -self.board
+        else:
+            print(f'Not a player: {playerTurn}')
+            return None
+
+    def getReward(self, playerTurn:PlayerTurn=None, score:tuple[int,int]=None) -> float:
+        """
+        Used to calculate the reward value for the last move performed for the selected player.
+        """
+        if playerTurn == None:
+            playerTurn = self.activePlayer
+        if score == None:
+            score = self.countScore()
+        if playerTurn == PlayerTurn.Player1:
+            return score[0]/(score[1] + .000001)
+        elif playerTurn == PlayerTurn.Player2:
+            return score[1]/(score[0] + .000001)
+        else:
+            print(f'Not a player: {playerTurn}')
+            return None
+
+    def step(self, action:int) -> bool:
+        """
+        Used to train agents in a similar way to the gymnasium's othello environment.
+        This only works for MoveMode.FullBoardSelect.
+        """
+        self.last_state = self.getState()
+        if self.checkGameOver():
+            last_reward = self.getReward(score=self.last_last_score)
+            self.reward = self.getReward() - last_reward
+            self.last_last_score = self.last_score
+            self.last_score = self.countScore()
+            self.activePlayer = self.flipTurn()
+            return True
+        self.placeTile(action)
+        last_reward = self.getReward(score=self.last_last_score)
+        self.reward = self.getReward() - last_reward
+        self.last_last_score = self.last_score
+        self.last_score = self.countScore()
+        self.activePlayer = self.flipTurn()
+        return self.checkGameOver()
+
 if __name__ == '__main__':
-    player1 = HumanPlayer(MoveMode.Directions8)
+    player1 = HumanPlayer(MoveMode.FullBoardSelect)
     player2 = HumanPlayer(MoveMode.FullBoardSelect)
     game = Othello(player1,player2,(8,8))
-    # The available moves at (3,3) are north and east
-    # If you change the starting coordinate to (4,4) on line 203 the available moves is south, east
     game.startGame()

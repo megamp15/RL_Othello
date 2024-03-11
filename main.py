@@ -1,10 +1,19 @@
+from typing_extensions import Unpack
+
 from othello import Othello, RENDER_MODE, OBS_SPACE
+
+from othelloGame import Othello as OthelloGame
+from othelloPlayer import AgentPlayer
+from othelloUtil import MoveMode
 
 from dqn import DDQN, DQN, DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 
 from train import train_QLearning, train_SARSA
 from test import test_agent
+from environment import Environment
+from agent import DeepAgent, AgentParams
+from neuralNet import StateNeuralNet
 
 from pathlib import Path
 import time
@@ -20,100 +29,87 @@ save_model_path.mkdir(parents=True, exist_ok=True)
 # Logs saving path
 save_logs_path = Path("logs") / date / t
 save_logs_path.mkdir(parents=True, exist_ok=True)
-logger = MetricLogger(save_logs_path)
+logger = MetricLogger(save_logs_path, 10)
 
 save_recordings_path = Path("recordings") / date / t
 save_recordings_path.mkdir(parents=True, exist_ok=True)
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.99999975
-EPSILON_MIN = 0.01
-ALPHA = 0.001 #0.00025
+EPSILON_DECAY_RATE = 0.999975
+EPSILON_MIN = 0.1
+ALPHA = 0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 25_000
-SAVE_INTERVAL = 500_000
-SYNC_INTERVAL = 20_000
+SKIP_TRAINING = 100
+SAVE_INTERVAL = 10_000
+SYNC_INTERVAL = 500
 
 # TRAINING PARAMS
-EPISODES = 1_000
-MAX_STEPS = 7_250
+EPISODES = 3_000
+MAX_STEPS = 60
 
 MEMORY_CAPACITY = 100_000
+BATCH_SIZE = 64
+
+def setup_gym_env() -> Environment:
+    othello = Othello(render_mode=RENDER_MODE.RGB, observation_type=OBS_SPACE.GRAY, record_video=False,
+                      save_recordings_path=save_recordings_path)
+    return othello
+
+def setup_pygame_env() -> Environment:
+    player = AgentPlayer(MoveMode.FullBoardSelect,agent=None)
+    game = OthelloGame(player,player,(8,8))
+    return game
+
+def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
+    dqn = DQN(**kwargs)
+    ddqn = DDQN(**kwargs)
+    dueldqn = DuelDQN(**kwargs)
+
+    sarsa = SARSA(**kwargs)
+    dsarsa = SARSA_DDQN(**kwargs)
+    duelsarsa = SARSA_DuelDQN(**kwargs)
+    return [dqn,ddqn,dueldqn,sarsa,dsarsa,duelsarsa]
 
 
 if __name__ == '__main__':
-    """
-    RENDER_MODE = ["human" or "rgb_array"] Human mode makes you see the board where as RGB will just do it in the background
-    OBSERVATION_TYPE = ["RGB", "GRAY", "RAM"] # RGB for color image, and GRAY for grayscale. RAM needs a diff env so that will cause an error for rn
-    VIDEO = Bool  Note: Only works with render_mode: rgb_array. render_mode is hardcoded alread if this is True
-    """
-    othello = Othello(render_mode=RENDER_MODE.RGB, observation_type=OBS_SPACE.RGB, record_video=False, save_recordings_path=save_recordings_path)
-
-    # Check the state of gymnasium nvironment after n_steps
-    # othello.run(n_steps=4_000)
-
-    environment = othello
-
-    # Define agent parameters once so it's not quite so verbose
-    params = {'state_shape' : environment.state_space,
-              'num_actions' : environment.num_actions,
-              'epsilon' : EPSILON,
-              'epsilon_decay_rate' : EPSILON_DECAY_RATE,
-              'epsilon_min' : EPSILON_MIN,
-              'alpha' : ALPHA,
-              'gamma' : GAMMA,
-              'sync_interval' : SYNC_INTERVAL,
-              'skip_training' : SKIP_TRAINING,
-              'save_interval' : SAVE_INTERVAL,
-              'max_memory' : MEMORY_CAPACITY,
-              'save_path' : save_model_path
-              }
-
-    # Q-Learning Agents
-    dqn = DQN(**params)
-    ddqn = DDQN(**params)
-    dueldqn = DuelDQN(**params)
-
-    # SARSA Agents
-    sarsa = SARSA(**params)
-    dsarsa = SARSA_DDQN(**params)
-    duelsarsa = SARSA_DuelDQN(**params)
-
-
-    """
-    Training Agents:
-    Set the hyperparams 
-    uncomment one of the train functions and specify one of the agents
-    Uncomment the logger.record_hyperparams to save the hyperparams to the log file
-    Uncomment Agent.load_model if you want to continue training from a certain saved model. 
-        The model will load the networks weights and the epsilon it left off at. Modify the epsilon if needed
-    """
-    AGENT = sarsa
-
-    # AGENT.load_model('./trained_models/03-08-2024/19_15_54/DQN_model_2') 
-    # AGENT.epsilon = 1 # Changing the epsilon
-
-    # make sure Agent is Q-Learning Agent
-    # At the end of the log file after training save hyerparams for reference
-    params['episodes'] = EPISODES
-    params['max_steps'] = MAX_STEPS
-    logger.record_hyperparams(params)
-    # train_QLearning(environment=othello, agent=AGENT, n_episodes=EPISODES, max_steps=MAX_STEPS, logger=logger)
-
-    # make sure Agent is SARSA Agent
-    train_SARSA(environment=othello, agent=AGENT, n_episodes=EPISODES, max_steps=MAX_STEPS, logger=logger)
-
+    for env in [setup_pygame_env()]:
+        params = {
+            'net_type' : StateNeuralNet,
+            'state_shape' : env.state_space,
+            'num_actions' : env.num_actions,
+            'epsilon' : EPSILON,
+            'epsilon_decay_rate' : EPSILON_DECAY_RATE,
+            'epsilon_min' : EPSILON_MIN,
+            'alpha' : ALPHA,
+            'gamma' : GAMMA,
+            'sync_interval' : SYNC_INTERVAL,
+            'skip_training' : SKIP_TRAINING,
+            'save_interval' : SAVE_INTERVAL,
+            'max_memory' : MEMORY_CAPACITY,
+            'save_path' : save_model_path,
+            'batch_size' : BATCH_SIZE
+            }
+        dummy_params = {
+            'net_type' : StateNeuralNet,
+            'state_shape' : env.state_space,
+            'num_actions' : env.num_actions,
+            'epsilon' : 1,
+            'epsilon_decay_rate' : 1,
+            'epsilon_min' : 1,
+            'alpha' : ALPHA,
+            'gamma' : GAMMA,
+            'sync_interval' : int(1e24),
+            'skip_training' : int(1e24),
+            'save_interval' : int(1e24),
+            'max_memory' : MEMORY_CAPACITY,
+            'save_path' : save_model_path,
+            'batch_size' : BATCH_SIZE
+            }
+        agents = setup_agents(**params)
+        dummy_agents = setup_agents(**dummy_params)
+        train_QLearning(env, agents[0], dummy_agents[0], EPISODES, MAX_STEPS, logger)
+        # for agent in agents:
+        #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
+            # test_agent(env, agent)
     
-
-    """
-    Evaluate Agents:
-        Comment out the above train function(s) and logger.record_hyperparams lines
-
-        Put the full path from this scripts location to the saved models location
-        Set the global hyperparams to what is at the end of the log files for the model you trained
-        If you want to record video: Set the record_video param of the environment to True
-    """
-
-    # AGENT.load_model('./trained_models/03-08-2024/18_08_54/DQN_model_7')
-    # test_agent(environment=othello, agent=AGENT)
