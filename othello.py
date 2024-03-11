@@ -8,6 +8,7 @@ from tqdm import trange
 
 from environment import Environment
 
+from agent import DeepAgent
 
 class OBS_SPACE(Enum):
     """
@@ -59,7 +60,7 @@ class Othello(Environment):
         obs, _ = self.env.reset()
         self.current_state = self.preprocess_obs(obs)
     
-    def step(self, action:int) -> bool:
+    def step(self, action:int, dummy_agent:DeepAgent=None) -> bool:
         obs, reward, terminated, truncated, _ = self.env.step(action)
         self.last_state = self.current_state
         self.current_state = self.preprocess_obs(obs)
@@ -69,8 +70,8 @@ class Othello(Environment):
     def getReward(self) -> float:
         return self.reward
     
-    def getAvailableMoves(self) -> list:
-        return self.env.action_space
+    def getAvailableMoves(self) -> list[int]:
+        return list(range(self.num_actions))
 
     def setup_env(self) -> gym.Env:
         """

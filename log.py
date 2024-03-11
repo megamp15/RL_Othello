@@ -1,22 +1,24 @@
-from typing_extensions import Unpack
 import numpy as np
 import time, datetime
 import matplotlib.pyplot as plt
 from agent import AgentParams
+import os
 
 # Using this logger class from https://pytorch.org/tutorials/intermediate/mario_rl_tutorial.html
 
 class MetricLogger:
-    def __init__(self, save_dir:str, window:int):
-        self.save_log = save_dir / "log.csv"
+    def __init__(self, save_dir:str, window_size:int):
+        self.save_log = save_dir + "/log.csv"
+
+        os.makedirs(save_dir)
         with open(self.save_log, "w") as f:
             f.write(
                 '#Episode,Step,Epsilon,MeanReward,MeanLength,MeanLoss,MeanQValue,TimeDelta,Time\n'
             )
-        self.ep_rewards_plot = save_dir / "reward_plot.jpg"
-        self.ep_lengths_plot = save_dir / "length_plot.jpg"
-        self.ep_avg_losses_plot = save_dir / "loss_plot.jpg"
-        self.ep_avg_qs_plot = save_dir / "q_plot.jpg"
+        self.ep_rewards_plot = save_dir + "/reward_plot.jpg"
+        self.ep_lengths_plot = save_dir + "/length_plot.jpg"
+        self.ep_avg_losses_plot = save_dir + "/loss_plot.jpg"
+        self.ep_avg_qs_plot = save_dir + "/q_plot.jpg"
 
         # History metrics
         self.ep_rewards = []
@@ -31,7 +33,7 @@ class MetricLogger:
         self.moving_avg_ep_avg_qs = []
 
         # Window size for moving average
-        self.window = window
+        self.window_size = window_size
 
         # Current episode metric
         self.init_episode()
@@ -71,7 +73,7 @@ class MetricLogger:
 
     def record(self, episode:int, epsilon:float, step:int, window:int=None) -> None:
         if window == None:
-            window = self.window
+            window = self.window_size
         mean_ep_reward = np.round(np.mean(self.ep_rewards[-window:]), 3)
         mean_ep_length = np.round(np.mean(self.ep_lengths[-window:]), 3)
         mean_ep_loss = np.round(np.mean(self.ep_avg_losses[-window:]), 3)

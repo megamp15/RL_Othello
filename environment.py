@@ -20,6 +20,7 @@ class Environment(ABC):
         """
         pass
 
+    @abstractmethod
     def getAvailableMoves(self) -> list:
         """
         Used to retrieve a list of available moves, either for this specific turn, or for the whole game.

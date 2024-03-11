@@ -298,12 +298,8 @@ class Othello(Environment):
         else:
             print(f'Not a player: {playerTurn}')
             return None
-
-    def step(self, action:int) -> bool:
-        """
-        Used to train agents in a similar way to the gymnasium's othello environment.
-        This only works for MoveMode.FullBoardSelect.
-        """
+        
+    def _step(self, action:int) -> bool:
         self.last_state = self.getState()
         if self.checkGameOver():
             last_reward = self.getReward(score=self.last_last_score)
@@ -318,6 +314,19 @@ class Othello(Environment):
         self.last_last_score = self.last_score
         self.last_score = self.countScore()
         self.activePlayer = self.flipTurn()
+        return self.checkGameOver()
+
+    def step(self, action:int, dummy_agent:DeepAgent=None) -> bool:
+        """
+        Used to train agents in a similar way to the gymnasium's othello environment.
+        This only works for MoveMode.FullBoardSelect.
+        """
+        self._step(action)
+
+        if dummy_agent != None:
+            dummy_action = dummy_agent.get_action(self.getState(),self.getAvailableMoves())
+            self._step(dummy_action)
+
         return self.checkGameOver()
 
 if __name__ == '__main__':
