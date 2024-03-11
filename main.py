@@ -103,8 +103,8 @@ if __name__ == '__main__':
             'batch_size' : BATCH_SIZE
             }
         agents = setup_agents(**params)
-        dummy_agents = setup_agents(**dummy_params)
-        train_QLearning(env, agents[0], dummy_agents[0], EPISODES, MAX_STEPS, logger)
+        dummy_agent = DQN(**dummy_params)
+        train_QLearning(env, agents[0], dummy_agent, EPISODES, MAX_STEPS, logger)
         # for agent in agents:
         #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
             # test_agent(env, agent)

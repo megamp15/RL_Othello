@@ -23,6 +23,7 @@ class AgentType(Enum):
     DUELSARSA = "DUELSARSA"
 
 class AgentParams(TypedDict):
+    net_type : type[BaseNeuralNet]
     state_shape : tuple[int,int,int,int]
     num_actions : int
     epsilon : float
