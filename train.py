@@ -7,111 +7,114 @@ from othello import OBS_SPACE
 from othelloPlayer import AgentPlayer
 from othelloUtil import *
 
+from environment import Environment
 
-def train_QLearning(environment, agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
+
+def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
     rewards = []
     loss_record = []
     q_record = []
     # Repeat (for each episode)
-    for e in trange(n_episodes):
+    for e in trange(n_episodes, unit='episode'):
         # Initalize S
-        raw_obs, _ = environment.env.reset()
-        state = environment.preprocess_obs(raw_obs)
+        environment.reset()
+        state = environment.getState()
         cumulative_reward = 0
-        for t in trange(max_steps):
+        for t in trange(max_steps, unit='turn', leave=False):
             # Choose A from S using policy
-            action = agent.get_action(state)
+            available_moves = environment.getAvailableMoves()
+            action = agent.get_action(state, available_moves)
 
             # Take action A, observe R, S'
-            raw_obs, reward, terminated, truncated, _ = environment.env.step(action)
-            next_state = environment.preprocess_obs(raw_obs)
+            terminate = environment.step(action)
+            if terminate:
+                break
 
-            terminate = 1 if terminated or truncated else 0
-            
-            # Remove batch size dimension
-            if environment.obs_type == OBS_SPACE.GRAY:
-                state_mem = state[0]
-                next_state_mem = next_state[0]
-            else:
-                state_mem = state.squeeze()
-                next_state_mem = next_state.squeeze()
-            
-                # Store step in memory 
-            agent.memory.cache(state_mem, action, reward, next_state_mem, terminate)
+            # Player 2 "dummy" player
+            dummy_state = environment.getState()
+            dummy_available_moves = environment.getAvailableMoves()
+            dummy_action = dummy_agent.get_action(dummy_state,dummy_available_moves)
+            terminate = environment.step(dummy_action)
+            if terminate:
+                break
+
+            next_state = environment.getState()
+            reward = environment.getReward()
+
+            available_moves = environment.getAvailableMoves()
+            next_action = agent.get_action(next_state, available_moves)
 
             # Update Q-Vals
             # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
-            q, loss = agent.train()
+            q, loss = agent.train(state, action, reward, next_state, next_action, terminate)
 
             logger.log_step(reward, loss, q)
 
             # S <- S'
-            state = next_state
+            state = environment.getState()
             cumulative_reward += reward
 
-            if terminated or truncated:
-                break
         rewards.append(cumulative_reward)
         loss_record.append(loss)
         q_record.append(q)
         logger.log_episode()
 
-        logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
+        logger.record(episode=e, epsilon=agent.epsilon, step=t)
 
+    agent.save_model()
     print(f"Rewards: {rewards}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")
 
 
-def train_SARSA(environment, agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
+def train_SARSA(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
     rewards = []
     loss_record = []
     q_record = []
     # Repeat (for each episode)
-    for e in trange(n_episodes):
+    for e in trange(n_episodes, unit='episode'):
         # Initalize S
-        raw_obs, _ = environment.env.reset()
-        state = environment.preprocess_obs(raw_obs)
+        environment.reset()
+        state = environment.getState()
         cumulative_reward = 0
 
         # Choose A from S using policy
-        action = agent.get_action(state)
+        available_moves = environment.getAvailableMoves()
+        action = agent.get_action(state,available_moves)
 
         # Repeat (for each step of episode)
-        for t in trange(max_steps):
+        for t in trange(max_steps, unit='turn', leave=False):
             # Take action A, observe R, S'
-            raw_obs, reward, terminated, truncated, _ = environment.env.step(action)
-            next_state = environment.preprocess_obs(raw_obs)
+            terminate = environment.step(action)
+            if terminate:
+                break
+            
+            # Player 2 "dummy" player
+            dummy_state = environment.getState()
+            dummy_available_moves = environment.getAvailableMoves()
+            dummy_action = dummy_agent.get_action(dummy_state,dummy_available_moves)
+            terminate = environment.step(dummy_action)
+            if terminate:
+                break
 
-            terminate = 1 if terminated or truncated else 0
+            next_state = environment.getState()
+            reward = environment.getReward()
 
             # Choose A' from S' using policy
-            next_action = agent.get_action(next_state)  # Get next action for SARSA
-            
-            # Remove batch size dimension
-            if environment.obs_type == OBS_SPACE.GRAY:
-                state_mem = state[0]
-                next_state_mem = next_state[0]
-            else:
-                state_mem = state.squeeze()
-                next_state_mem = next_state.squeeze()
-
-            # Store step in memory 
-            agent.memory.cache(state_mem, action, reward, next_state_mem, terminate, next_action)
+            available_moves = environment.getAvailableMoves()
+            next_action = agent.get_action(next_state,available_moves)
 
             # Update Q-Vals
             # Q(S,A) <- Q(S,A) + alpha[R + gamma * Q(S',A') - Q(S,A)]
-            q, loss = agent.train()
+            q, loss = agent.train(state, action, reward, next_state, next_action, terminate)
 
             logger.log_step(reward, loss, q)
 
             # S <- S', A<- A'
-            state = next_state
+            state = environment.getState()
             action = next_action
 
             cumulative_reward += reward
-            if terminated or truncated:
-                break
         rewards.append(cumulative_reward)
         loss_record.append(loss)
         q_record.append(q)
@@ -119,12 +122,13 @@ def train_SARSA(environment, agent:DeepAgent, n_episodes:int, max_steps:int, log
 
         logger.record(episode=e, epsilon=agent.epsilon, step=agent.step)
 
+    agent.save_model()
     print(f"Rewards: {rewards}")
     print(f"Loss: {loss_record}")
     print(f"Q_record: {q_record}")  
     
     
-def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
+def train_QLearning_pygame(environment:Environment, agent:DeepAgent, n_episodes:int=1, max_steps:int=100) -> None:
     '''
     Train function for the othelloGame environment
 
@@ -196,7 +200,8 @@ def train_QLearning_pygame(environment, agent:DeepAgent, n_episodes:int=1, max_s
                 availableMoves = environment.getAvailableMoves()
                 next_action = agent.get_action(next_state,availableMoves)
                 next_action_index = getIndexFromCoords(next_action)
-                q, loss = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1), episode_over,next_action_index)
+                q, loss = agent.update(prev_state.reshape(1,-1),prev_action_index, full_turn_reward, next_state.reshape(1,-1),
+                                       episode_over,next_action_index)
                 logger.log_step(reward, loss, q)
                 
             cumulative_reward += reward

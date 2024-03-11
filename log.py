@@ -80,18 +80,18 @@ class MetricLogger:
         self.record_time = time.time()
         time_since_last_record = np.round(self.record_time - last_record_time, 3)
 
-        print(
-            '\n'
-            f"Episode {episode} - "
-            f"Step {step} - "
-            f"Epsilon {epsilon} - "
-            f"Mean Reward {mean_ep_reward} - "
-            f"Mean Length {mean_ep_length} - "
-            f"Mean Loss {mean_ep_loss} - "
-            f"Mean Q Value {mean_ep_q} - "
-            f"Time Delta {time_since_last_record} - "
-            f"Time {datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}"
-        )
+        # print(
+        #     '\n'
+        #     f"Episode {episode} - "
+        #     f"Step {step} - "
+        #     f"Epsilon {epsilon} - "
+        #     f"Mean Reward {mean_ep_reward} - "
+        #     f"Mean Length {mean_ep_length} - "
+        #     f"Mean Loss {mean_ep_loss} - "
+        #     f"Mean Q Value {mean_ep_q} - "
+        #     f"Time Delta {time_since_last_record} - "
+        #     f"Time {datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}"
+        # )
 
         with open(self.save_log, "a") as f:
             f.write(
