@@ -312,7 +312,7 @@ class Othello(Environment):
             self.last_score = self.countScore()
             self.activePlayer = self.flipTurn()
             return True
-        self.placeTile(action)
+        self.placeTile(getCoordsFromIndex(action))
         last_reward = self.getReward(score=self.last_last_score)
         self.reward = self.getReward() - last_reward
         self.last_last_score = self.last_score
