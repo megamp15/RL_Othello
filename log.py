@@ -15,10 +15,10 @@ class MetricLogger:
             f.write(
                 '#Episode,Step,Epsilon,MeanReward,MeanLength,MeanLoss,MeanQValue,TimeDelta,Time\n'
             )
-        self.ep_rewards_plot = save_dir / "reward_plot.jpg"
-        self.ep_lengths_plot = save_dir / "length_plot.jpg"
-        self.ep_avg_losses_plot = save_dir / "loss_plot.jpg"
-        self.ep_avg_qs_plot = save_dir / "q_plot.jpg"
+        self.ep_rewards_plot = save_dir + "/reward_plot.jpg"
+        self.ep_lengths_plot = save_dir + "/length_plot.jpg"
+        self.ep_avg_losses_plot = save_dir + "/loss_plot.jpg"
+        self.ep_avg_qs_plot = save_dir + "/q_plot.jpg"
 
         # History metrics
         self.ep_rewards = []
