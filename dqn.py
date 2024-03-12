@@ -47,7 +47,7 @@ class DQN(DeepAgent):
 class DDQN(DeepAgent):
     def __init__(self,**kwargs:Unpack[AgentParams]) -> None:
         super().__init__(agent_type=AgentType.DDQN, **kwargs)
-        self.target_net = self.net_type(kwargs['batch_size'], kwargs['state_shape'], kwargs['num_actions'])
+        self.target_net = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
         # # Q_target parameters are frozen.
@@ -90,7 +90,7 @@ class DuelDQN(DeepAgent):
     def __init__(self,**kwargs:Unpack[AgentParams]) -> None:
         super().__init__(agent_type=AgentType.DUELDQN, **kwargs)
         
-        self.value_net = self.net_type(kwargs['batch_size'], kwargs['state_shape'], 1)
+        self.value_net = self.net_type(kwargs['state_shape'], 1)
         self.advantage_net = self.network
         
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
