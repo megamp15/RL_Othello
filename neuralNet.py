@@ -7,11 +7,10 @@ class BaseNeuralNet(nn.Module,ABC):
     """
     A neural network base class for different types of neural networks used.
     """
-    def __init__(self, batch_size, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim):
         super().__init__()
 
         self.input_dim = input_dim
-        self.batch_size = batch_size
         self.channel, self.height, self.width = self.input_dim
         self.output_dim = output_dim
         self.device = self.device()
@@ -44,8 +43,8 @@ class BaseNeuralNet(nn.Module,ABC):
         return np.prod(conv(torch.rand(*image_dim)).shape)
     
     def forward(self, state:np.ndarray):
-        # Q = self.network(state) # This is what is needed for Gym env
-        Q = self.network(state.reshape((-1,64)))
+        Q = self.network(state) # This is what is needed for Gym env
+        # Q = self.network(state.reshape((-1,64)))
         # assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
         return Q
 
@@ -74,7 +73,7 @@ class PixelNeuralNet(BaseNeuralNet):
         conv = nn.Sequential(
             nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=8, stride=4),
             nn.ReLU(),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2),
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
             nn.ReLU(),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),
             nn.ReLU(),
@@ -89,6 +88,21 @@ class PixelNeuralNet(BaseNeuralNet):
             nn.ReLU(),
             nn.Linear(512, self.output_dim)
         )
+
+        # conv = nn.Sequential(
+        #     nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=3, stride=1),
+        #     nn.ReLU(),
+        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
+        #     nn.ReLU(),
+        # )
+        # conv_out_size = self.get_conv_out_size(self.conv, self.input_dim)
+
+        # fc = nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(self.conv_out_size, 512),
+        #     nn.ReLU(),
+        #     nn.Linear(512, self.output_dim)
+        # )
         
         return nn.Sequential(conv,fc)
 

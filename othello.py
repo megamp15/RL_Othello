@@ -80,8 +80,8 @@ class Othello(Environment):
         if self.record_video:
             self.render_mode = RENDER_MODE.RGB
         env = gym.make("ALE/Othello-v5", render_mode=self.render_mode.value, obs_type=self.obs_type.value)
-        # Resize obs_space from 210 x 160 -> 105 x 80 to conserve data space but same resolution
-        env = ResizeObservation(env, (105, 80))
+        # Resize obs_space from 210 x 160 -> 53 x 40 to conserve data space but same resolution
+        env = ResizeObservation(env, (53, 40))
         if self.record_video:
             env = RecordVideo(env, video_folder=self.save_recordings_path, name_prefix="video", episode_trigger=lambda x: x)
         return env
@@ -122,7 +122,8 @@ class Othello(Environment):
         # OBS_TYPE = RGB - Don't think we need this. We should train on GRAY scale images anyways
         if obs.ndim > 2:
             # Crop
-            obs_cropped = obs[8:-7, 6:-8, :]
+            obs_cropped = obs[4:-4, 3:-4, :] # 53 x 40
+            # obs_cropped = obs[8:-7, 6:-8, :] # 105 x 80
             if show_state:
                 plt.imshow(obs_cropped)
                 plt.show()
@@ -131,7 +132,8 @@ class Othello(Environment):
         # OBS_TYPE = GRAY
         else:
             # Crop 
-            obs_cropped = obs[8:-7, 6:-8]
+            obs_cropped = obs[4:-4, 3:-4] # 53 x 40
+            # obs_cropped = obs[8:-7, 6:-8] # 105 x 80
             if show_state:
                 plt.imshow(obs_cropped)
                 plt.show()
