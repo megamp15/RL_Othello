@@ -207,7 +207,7 @@ class Othello(Environment):
         else:
             raise FileNotFoundError
 
-    def getAvailableMoves(self, coords:tuple[int,int]=None, selectedPlayer:PlayerTurn=None) -> list[GameMove]:
+    def getAvailableMoves(self, coords:tuple[int,int]=None, selectedPlayer:PlayerTurn=None) -> list[GameMove]|list[int]:
         """
         Returns the available, valid moves that can be performed at the given coordinates.
         """
@@ -216,20 +216,28 @@ class Othello(Environment):
             selectedPlayer = self.activePlayer
         # We should pass None for coords if using FullBoardSelect
         selectedPlayerObj = self.getPlayer(selectedPlayer)
-        if selectedPlayerObj.mode == MoveMode.FullBoardSelect and coords != None:
-            raise FileNotFoundError
+        if selectedPlayerObj.mode == MoveMode.FullBoardSelect:
+            return self._getAvailableMoves_direct(selectedPlayer)
+        else:
+            return self._getAvailableMoves_cursor(coords, selectedPlayer)
+    
+    def _getAvailableMoves_cursor(self, coords:tuple[int,int], selectedPlayer:PlayerTurn=None) -> list[GameMove]:
+        # Default to the active player
+        if selectedPlayer == None:
+            selectedPlayer = self.activePlayer
+        
+        selectedPlayerObj = self.getPlayer(selectedPlayer)
 
-        availableMoves = list[GameMove]()
         if selectedPlayerObj.mode == MoveMode.Directions8:
             directionMoves = getDirectionMoves_8()
         elif selectedPlayerObj.mode == MoveMode.Directions4:
             directionMoves = getDirectionMoves_4()
         else:
-            moves = np.array(np.where(self.findAvailableTilePlacements(selectedPlayer))).T
-            return [tuple(x) for x in moves]
+            print('Move mode is not Directions8 or Directions4. This method should not be called.')
+            exit(1)
 
-        coords = np.array(coords)
         # Find all available tile placements and check if any of the direction moves can move to one
+        availableMoves = list[GameMove]()
         moveMask = self.findAvailableTilePlacements(selectedPlayer)
         for direction in directionMoves:
             if self.isWithinBounds(self.performMove(direction,coords)):
@@ -240,6 +248,14 @@ class Othello(Environment):
             availableMoves.append(GameMove.PlaceTile)
 
         return availableMoves
+
+    def _getAvailableMoves_direct(self, selectedPlayer:PlayerTurn=None) -> list[int]:
+        # Default to the active player
+        if selectedPlayer == None:
+            selectedPlayer = self.activePlayer
+
+        moves = np.array(np.where(self.findAvailableTilePlacements(selectedPlayer))).T
+        return [getIndexFromCoords(tuple(x)) for x in moves]
 
     def takeTurn(self) -> None:
         """
@@ -308,7 +324,7 @@ class Othello(Environment):
             self.last_score = self.countScore()
             self.activePlayer = self.flipTurn()
             return True
-        self.placeTile(action)
+        self.placeTile(getCoordsFromIndex(action))
         last_reward = self.getReward(score=self.last_last_score)
         self.reward = self.getReward() - last_reward
         self.last_last_score = self.last_score
@@ -323,7 +339,7 @@ class Othello(Environment):
         """
         self._step(action)
 
-        if dummy_agent != None:
+        if dummy_agent != None and not self.checkGameOver():
             dummy_action = dummy_agent.get_action(self.getState(),self.getAvailableMoves())
             self._step(dummy_action)
 
