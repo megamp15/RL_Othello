@@ -42,11 +42,9 @@ class BaseNeuralNet(nn.Module,ABC):
         """
         return np.prod(conv(torch.rand(*image_dim)).shape)
     
+    @abstractmethod
     def forward(self, state:np.ndarray):
-        Q = self.network(state) # This is what is needed for Gym env
-        # Q = self.network(state.reshape((-1,64)))
-        # assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
-        return Q
+        pass
 
 class PixelNeuralNet(BaseNeuralNet):
     """
@@ -106,7 +104,11 @@ class PixelNeuralNet(BaseNeuralNet):
         
         return nn.Sequential(conv,fc)
 
-
+    def forward(self, state:np.ndarray):
+        Q = self.network(state) # This is what is needed for Gym env
+        Q=Q.clone().detach().requires_grad_(True)
+        assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
+        return Q
 
 class StateNeuralNet(BaseNeuralNet):
 		
@@ -144,3 +146,9 @@ class StateNeuralNet(BaseNeuralNet):
         )
         
         return fc
+    
+    def forward(self, state:np.ndarray):
+        Q = self.network(state.reshape((-1,64)))
+        Q=Q.clone().detach().requires_grad_(True)
+        assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
+        return Q

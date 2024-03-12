@@ -3,7 +3,7 @@ from log import MetricLogger
 
 from tqdm import trange
 
-from othello import OBS_SPACE
+from othello import OBS_SPACE, Othello
 from othelloPlayer import AgentPlayer
 from othelloUtil import *
 
@@ -11,6 +11,8 @@ from environment import Environment
 
 
 def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent, n_episodes:int, max_steps:int, logger:MetricLogger) -> None:
+    isGym = isinstance(environment,Othello)
+    
     rewards = []
     loss_record = []
     q_record = []
@@ -38,7 +40,7 @@ def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAg
 
             # Update Q-Vals
             # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
-            q, loss = agent.train(state, action, reward, next_state, next_action, terminate)
+            q, loss = agent.train(state, action, reward, next_state, next_action, terminate, isGym)
 
             logger.log_step(reward, loss, q)
 

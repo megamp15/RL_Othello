@@ -111,9 +111,10 @@ class DeepAgent(ABC):
         return q_vals, loss
     
     @abstractmethod
-    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
-        # action_idx = getIndexFromCoords(action)
-        # next_action_idx = getIndexFromCoords(next_action)
+    def train(self, state, action, reward, next_state, next_action, terminate, isGymEnv) -> tuple:
+        if not isGymEnv:
+            action = getIndexFromCoords(action)
+            next_action = getIndexFromCoords(next_action)
         self.memory.cache(state, action, reward, next_state, next_action, terminate)
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:

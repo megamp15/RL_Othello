@@ -23,7 +23,7 @@ class DQN(DeepAgent):
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
     
-    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
+    def train(self, state, action, reward, next_state, next_action, terminate, isGymEnv) -> tuple:
         """
         Model learning/optimization
         """
@@ -32,7 +32,7 @@ class DQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        super().train(state, action, reward, next_state, next_action, terminate)
+        super().train(state, action, reward, next_state, next_action, terminate, isGymEnv)
         state, action, reward, next_state, _ , terminate = self.memory.recall()
         #print('dqn Train state shape:',state)
         #print('dqn Train action:',action)
@@ -51,8 +51,8 @@ class DDQN(DeepAgent):
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
         # # Q_target parameters are frozen.
-        # for p in self.target_net.parameters():
-        #     p.requires_grad = False
+        for p in self.target_net.parameters():
+            p.requires_grad = False
         
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, terminate:torch.Tensor) -> float:
@@ -67,7 +67,7 @@ class DDQN(DeepAgent):
     def sync_w_to_target_net(self) -> None:
         self.target_net.load_state_dict(self.network.state_dict())
         
-    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
+    def train(self, state, action, reward, next_state, next_action, terminate,isGymEnv) -> tuple:
         """
         Model learning/optimization
         """
@@ -78,7 +78,7 @@ class DDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        super().train(state, action, reward, next_state, next_action, terminate)
+        super().train(state, action, reward, next_state, next_action, terminate, isGymEnv)
         state, action, reward, next_state ,_ , terminate = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
@@ -106,7 +106,7 @@ class DuelDQN(DeepAgent):
         not_done = 1 - terminate # Invert for mult below
         return (reward + self.gamma * next_Q*not_done).float()
 
-    def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
+    def train(self, state, action, reward, next_state, next_action, terminate, isGymEnv) -> tuple:
         """
         Model learning/optimization
         """
@@ -115,7 +115,7 @@ class DuelDQN(DeepAgent):
         if self.step % self.save_interval == 0: # Save every n eps
             self.save_model()
         
-        super().train(state, action, reward, next_state, next_action, terminate)
+        super().train(state, action, reward, next_state, next_action, terminate, isGymEnv)
         state, action, reward, next_state, _ , terminate  = self.memory.recall()
         q_est = self.current_q_w_estimate(state, action)
         q_tgt = self.q_target(reward, next_state, terminate)
