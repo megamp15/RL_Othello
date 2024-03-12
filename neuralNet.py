@@ -86,22 +86,6 @@ class PixelNeuralNet(BaseNeuralNet):
             nn.ReLU(),
             nn.Linear(512, self.output_dim)
         )
-
-        # conv = nn.Sequential(
-        #     nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=3, stride=1),
-        #     nn.ReLU(),
-        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
-        #     nn.ReLU(),
-        # )
-        # conv_out_size = self.get_conv_out_size(self.conv, self.input_dim)
-
-        # fc = nn.Sequential(
-        #     nn.Flatten(),
-        #     nn.Linear(self.conv_out_size, 512),
-        #     nn.ReLU(),
-        #     nn.Linear(512, self.output_dim)
-        # )
-        
         return nn.Sequential(conv,fc)
 
     def forward(self, state:np.ndarray):

@@ -32,17 +32,17 @@ save_recordings_path = f'recordings/{date}/{t}'
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.999975
-EPSILON_MIN = 0.1
+EPSILON_DECAY_RATE = 0.999999975
+EPSILON_MIN = 0.01
 ALPHA = 0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 100
-SAVE_INTERVAL = 10_000
-SYNC_INTERVAL = 500
+SKIP_TRAINING = 20_000
+SAVE_INTERVAL = 500_000
+SYNC_INTERVAL = 1_000
 
 # TRAINING PARAMS
-EPISODES = 3_000
-MAX_STEPS = 60
+EPISODES = 5_000
+MAX_STEPS = 7_250
 
 MEMORY_CAPACITY = 100_000
 BATCH_SIZE = 32
@@ -107,7 +107,10 @@ if __name__ == '__main__':
             }
         agents = setup_agents(**params)
         dummy_agent = DQN(**dummy_params)
-        train_QLearning(env, agents[1], dummy_agent, EPISODES, MAX_STEPS, logger)
+        train_QLearning(env, agents[0], dummy_agent, EPISODES, MAX_STEPS, logger)
+        params['episodes'] = EPISODES
+        params['max_steps'] = MAX_STEPS
+        logger.record_hyperparams(params)
         # for agent in agents:
         #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
             # test_agent(env, agent)

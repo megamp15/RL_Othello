@@ -121,8 +121,8 @@ class MetricLogger:
         del hyperparams['state_shape']
         del hyperparams['num_actions']
         hyperparams_str = '\n'.join([f"{key}: {value}" for key, value in hyperparams.items()])
-        print("\nHyperparameters:")
-        print(hyperparams_str)
+        # print("\nHyperparameters:")
+        # print(hyperparams_str)
         with open(self.save_log, "a") as f:
             f.write(
                 f"\nHyperparameters:\n{hyperparams_str}\n"
