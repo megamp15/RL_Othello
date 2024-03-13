@@ -106,11 +106,10 @@ if __name__ == '__main__':
         agents = setup_agents(**params)
         dummy_agent = DQN(**dummy_params)
         max_steps = MAX_STEPS_PYGAME if isinstance(env,OthelloGame) else MAX_STEPS_GYM
-        # train_QLearning(env, agents[0], dummy_agent, EPISODES, max_steps, logger)
         print(f'Environment : {env.name}')
         for agent in agents:
-            print(f'Agent: {agent.agent_type.value}')
-            logger.save_dir = f'{save_logs_path}_{agent.agent_type.value}'
+            print(f'Agent: {agent.name}')
+            logger.save_dir = f'{save_logs_path}_{agent.name}'
             train_QLearning(env, agent, dummy_agent, 1, max_steps, logger)
             # test_agent(env, agent)
     
