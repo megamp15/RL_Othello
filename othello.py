@@ -39,6 +39,7 @@ class Othello(Environment):
     The environment for Othello that wraps the Gymnasium Atari Environment
     """
     def __init__(self, render_mode:RENDER_MODE, observation_type:OBS_SPACE, record_video:bool, save_recordings_path:str=None):
+        self.name = 'Gymnasium Othello'
         self.render_mode = render_mode
         self.obs_type = observation_type
         self.record_video = record_video 

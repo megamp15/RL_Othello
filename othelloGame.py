@@ -26,6 +26,7 @@ class Othello(Environment):
     """
     def __init__(self, player1:OthelloPlayer, player2:OthelloPlayer, board_size:tuple[int,int]=(8,8)) -> None:
         # pygame.init()
+        self.name = 'Pygame Othello'
         self.board_size = np.array(board_size)
         self.state_space = [1] + list(board_size)
         self.reset()

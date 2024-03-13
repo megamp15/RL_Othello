@@ -36,7 +36,7 @@ EPSILON_DECAY_RATE = 0.999975
 EPSILON_MIN = 0.1
 ALPHA = 0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 100
+SKIP_TRAINING = 1
 SAVE_INTERVAL = 10_000
 SYNC_INTERVAL = 500
 
@@ -70,7 +70,7 @@ def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
 
 
 if __name__ == '__main__':
-    for env in [setup_pygame_env()]:
+    for env in [setup_gym_env(),setup_pygame_env()]:
         params = {
             'net_type' : StateNeuralNet if isinstance(env,OthelloGame) else PixelNeuralNet,
             'state_shape' : env.state_space,
@@ -106,8 +106,10 @@ if __name__ == '__main__':
         agents = setup_agents(**params)
         dummy_agent = DQN(**dummy_params)
         max_steps = MAX_STEPS_PYGAME if isinstance(env,OthelloGame) else MAX_STEPS_GYM
-        train_QLearning(env, agents[0], dummy_agent, EPISODES, max_steps, logger)
-        # for agent in agents:
-        #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
+        # train_QLearning(env, agents[0], dummy_agent, EPISODES, max_steps, logger)
+        print(f'Environment : {env.name}')
+        for agent in agents:
+            print(f'Agent: {agent.agent_type.value}')
+            train_QLearning(env, agent, dummy_agent, 1, max_steps, logger)
             # test_agent(env, agent)
     
