@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class Environment(ABC):
+    name = 'abstract environment'
+    
     def __init__(self) -> None:
         self.state_space : int = 0
         self.num_actions : int = 0

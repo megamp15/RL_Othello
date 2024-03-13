@@ -110,6 +110,7 @@ if __name__ == '__main__':
             print(f'Agent: {agent.name}')
             logger.save_dir = f'{save_logs_path}_{agent.name}'
             run_agents(env, agent, dummy_agent, EPISODES, max_steps, logger, train=True)
+            agent.epsilon = 0
+            agent.epsilon_min = 0
             run_agents(env, agent, dummy_agent, 1000, max_steps, logger, train=False)
         env.close()
-    
