@@ -69,7 +69,7 @@ def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
 
 
 if __name__ == '__main__':
-    for env in [setup_gym_env()]:
+    for env in [setup_pygame_env()]:
         params = {
             'net_type' : PixelNeuralNet,
             'state_shape' : env.state_space,
