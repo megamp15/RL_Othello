@@ -10,7 +10,7 @@ class MetricLogger:
     def __init__(self, save_dir:str, window_size:int):
         self.save_log = save_dir + "/log.csv"
 
-        os.makedirs(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
         with open(self.save_log, "w") as f:
             f.write(
                 '#Episode,Step,Epsilon,MeanReward,MeanLength,MeanLoss,MeanQValue,TimeDelta,Time\n'
@@ -118,8 +118,6 @@ class MetricLogger:
             plt.savefig(getattr(self, f"{metric}_plot"))
 
     def record_hyperparams(self, hyperparams:AgentParams):
-        del hyperparams['state_shape']
-        del hyperparams['num_actions']
         hyperparams_str = '\n'.join([f"{key}: {value}" for key, value in hyperparams.items()])
         # print("\nHyperparameters:")
         # print(hyperparams_str)

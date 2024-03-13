@@ -32,17 +32,17 @@ save_recordings_path = f'recordings/{date}/{t}'
 
 # AGENT PARAMS
 EPSILON = 1
-EPSILON_DECAY_RATE = 0.999999975
+EPSILON_DECAY_RATE = 0.9999999
 EPSILON_MIN = 0.01
-ALPHA = 0.00025
+ALPHA = 0.001
 GAMMA = 0.9
-SKIP_TRAINING = 20_000
-SAVE_INTERVAL = 500_000
+SKIP_TRAINING = 25_000
+SAVE_INTERVAL = 100_000
 SYNC_INTERVAL = 1_000
 
 # TRAINING PARAMS
-EPISODES = 5_000
-MAX_STEPS = 7_250
+EPISODES = 500
+MAX_STEPS = 6_750
 
 MEMORY_CAPACITY = 100_000
 BATCH_SIZE = 32
@@ -65,7 +65,7 @@ def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
     sarsa = SARSA(**kwargs)
     dsarsa = SARSA_DDQN(**kwargs)
     duelsarsa = SARSA_DuelDQN(**kwargs)
-    return [dqn,ddqn,dueldqn,sarsa,dsarsa,duelsarsa]
+    return [dsarsa,duelsarsa]
 
 
 if __name__ == '__main__':
@@ -107,11 +107,21 @@ if __name__ == '__main__':
             }
         agents = setup_agents(**params)
         dummy_agent = DQN(**dummy_params)
-        train_QLearning(env, agents[0], dummy_agent, EPISODES, MAX_STEPS, logger)
-        params['episodes'] = EPISODES
-        params['max_steps'] = MAX_STEPS
-        logger.record_hyperparams(params)
-        # for agent in agents:
-        #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
+        # train_QLearning(env, agents[0], dummy_agent, EPISODES, MAX_STEPS, logger)
+        # params['episodes'] = EPISODES
+        # params['max_steps'] = MAX_STEPS
+        # logger.record_hyperparams(params)
+        for agent in agents:
+            # Logs saving path
+            save_logs_path = f'logs/{date}/{t}'
+            logger = MetricLogger(save_logs_path, 10)
+
+            train_QLearning(env, agent, dummy_agent, EPISODES, MAX_STEPS, logger)
+            params['episodes'] = EPISODES
+            params['max_steps'] = MAX_STEPS
+            logger.record_hyperparams(params)
             # test_agent(env, agent)
+
+            date = time.strftime('%m-%d-%Y')
+            t = time.strftime('%H%M_%S')
     
