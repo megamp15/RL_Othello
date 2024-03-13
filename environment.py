@@ -40,3 +40,9 @@ class Environment(ABC):
         Used to process some action to update the environment
         """
         pass
+
+    @abstractmethod
+    def close(self) -> None:
+        """
+        Used to shut the environment down and free any resources it uses
+        """

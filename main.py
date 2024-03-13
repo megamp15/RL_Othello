@@ -112,4 +112,5 @@ if __name__ == '__main__':
             logger.save_dir = f'{save_logs_path}_{agent.name}'
             train_QLearning(env, agent, dummy_agent, 1, max_steps, logger)
             # test_agent(env, agent)
+        env.close()
     

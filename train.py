@@ -1,6 +1,6 @@
 from tqdm import trange
 
-from agent import DeepAgent
+from agent import DeepAgent, AgentType
 from log import MetricLogger
 from environment import Environment
 from othelloUtil import *
@@ -16,10 +16,18 @@ def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAg
         environment.reset()
         state = environment.getState()
         cumulative_reward = 0
-        for t in trange(max_steps, unit='turn', leave=False):
+        action = None
+        
+        if agent.agent_type == AgentType.SARSA:
             # Choose A from S using policy
             available_moves = environment.getAvailableMoves()
             action = agent.get_action(state, available_moves)
+
+        for t in trange(max_steps, unit='turn', leave=False):
+            if agent.agent_type == AgentType.Q_LEARNING:
+                # Choose A from S using policy
+                available_moves = environment.getAvailableMoves()
+                action = agent.get_action(state, available_moves)
 
             # Take action A, observe R, S'
             terminate = environment.step(action, dummy_agent)
@@ -34,7 +42,6 @@ def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAg
                 next_action = agent.get_action(next_state, available_moves)
 
                 # Update Q-Vals
-                # Q(S,A) <- Q(S,A) + alpha[R + gamma * max_a Q(S',a) - Q(S,A)]
                 q, loss = agent.train(state, action, reward, next_state, next_action, terminate)
 
                 logger.log_step(reward, loss, q)

@@ -122,9 +122,9 @@ class DeepAgent(ABC):
     
     @abstractmethod
     def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
+        self.memory.cache(state, action, reward, next_state, next_action, terminate)
         if self.step < self.skip_training:
             return None, None
-        self.memory.cache(state, action, reward, next_state, next_action, terminate)
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
         pred = self.network(state)
@@ -142,7 +142,7 @@ class DeepAgent(ABC):
         if save_path == None:
             save_path = self.save_path
         os.makedirs(save_path, exist_ok=True)
-        file_name = f'{self.agent_type.value}_model_{int(self.step // self.save_interval)}'
+        file_name = f'{self.name}_model_{int(self.step // self.save_interval)}'
         torch.save(
             dict(model=self.network.state_dict(), 
                  epsilon=self.epsilon
