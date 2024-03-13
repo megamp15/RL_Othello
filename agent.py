@@ -39,7 +39,7 @@ class AgentParams(TypedDict):
     batch_size : int
 
 class DeepAgent(ABC):
-    def __init__(self, agent_type:AgentType, net_type:BaseNeuralNet, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
+    def __init__(self, agent_type:AgentType, net_type:type[BaseNeuralNet], loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
         # The Neural Networks for The main Q network and the target network
         self.net_type = net_type
         self.network : BaseNeuralNet = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
@@ -76,6 +76,15 @@ class DeepAgent(ABC):
     def decay_epsilon(self) -> None:
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
+    def get_action_by_policy_(self, state:np.ndarray, available_moves:list[int], network:BaseNeuralNet) -> int:
+        state = np.expand_dims(state, axis=0)
+        state_t = torch.tensor(state, device=network.device, dtype=torch.float32)
+        q_vals_actions = network(state_t)
+        return self.clamp_illegal_actions(q_vals_actions,available_moves)
+    
+    def get_action_by_policy(self, state:np.ndarray, available_moves:list[int]) -> int:
+        return self.get_action_by_policy_(state, available_moves, self.network)
+
     def get_action(self, state:np.ndarray, available_moves:list) -> tuple[int,int]:
         if available_moves == None or (isinstance(available_moves,list) and len(available_moves) == 0):
             print('No available moves.')
@@ -83,13 +92,14 @@ class DeepAgent(ABC):
         if random.random() < self.epsilon:
             action = random.choice(available_moves)
         else:
+            action = self.get_action_by_policy(state, available_moves)
             state = np.expand_dims(state, axis=0)
             state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
             q_vals_actions = self.network(state)
             action = self.clamp_illegal_actions(q_vals_actions,available_moves)
 
         self.decay_epsilon()
-        self.step += 1
+        # self.step += 1
 
         return action
     
@@ -112,16 +122,30 @@ class DeepAgent(ABC):
     
     @abstractmethod
     def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
-        # action_idx = getIndexFromCoords(action)
-        # next_action_idx = getIndexFromCoords(next_action)
         self.memory.cache(state, action, reward, next_state, next_action, terminate)
+        if self.step < self.skip_training:
+            return None, None
     
-    def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:
+    def get_Q_value_batch(self, network:BaseNeuralNet, state:np.ndarray, action_batch:list[int]=None) -> torch.Tensor:
+        q_value_batch : torch.Tensor = network(state)
+        if action_batch == None:
+            action_batch = self.get_best_action_batch(q_value_batch)
+        return q_value_batch[torch.arange(0,self.mem_batch_size), action_batch]
+    
+    def get_best_action_batch(self, q_value_batch:torch.Tensor) -> torch.Tensor:
+        return torch.argmax(q_value_batch,dim=1).tolist()
+    
+    def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> torch.Tensor:
         pred = self.network(state)
         current_Q = pred[np.arange(0, self.mem_batch_size), action]  
         return current_Q
+    
+    def reset(self) -> None:
+        if self.step % self.save_interval == 0: # Save every n eps
+            self.save_model()
+        self.step += 1
 
-    def update_network(self,q_w_estimate:float, q_target:float) -> float:
+    def update_network(self, q_w_estimate:torch.Tensor, q_target:torch.Tensor) -> float:
         loss : torch.Tensor = self.loss_func(q_w_estimate, q_target)
         self.optimizer.zero_grad()
         loss.backward()

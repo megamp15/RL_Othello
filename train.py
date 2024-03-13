@@ -45,12 +45,13 @@ def train_QLearning(environment:Environment, agent:DeepAgent, dummy_agent:DeepAg
             # S <- S'
             state = environment.getState()
             cumulative_reward += reward
+        agent.reset()
 
         rewards.append(cumulative_reward)
         loss_record.append(loss)
         q_record.append(q)
-        logger.log_episode()
 
+        logger.log_episode()
         logger.record(episode=e, epsilon=agent.epsilon, step=t)
 
     agent.save_model()
