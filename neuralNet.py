@@ -42,11 +42,9 @@ class BaseNeuralNet(nn.Module,ABC):
         """
         return np.prod(conv(torch.rand(*image_dim)).shape)
     
-    def forward(self, state:np.ndarray):
-        Q = self.network(state) # This is what is needed for Gym env
-        # Q = self.network(state.reshape((-1,64)))
-        # assert Q.requires_grad, "Q-Values must be a Torch Tensor with a Gradient"
-        return Q
+    @abstractmethod
+    def forward(self, state:np.ndarray) -> torch.Tensor:
+        pass
 
 class PixelNeuralNet(BaseNeuralNet):
     """
@@ -79,7 +77,6 @@ class PixelNeuralNet(BaseNeuralNet):
             nn.ReLU(),
         )
         conv_out_size = self.get_conv_out_size(conv, self.input_dim)
-        # print(f"conv_out_size: {conv_out_size}")
 
         # Followed by Fully Connected Layers
         fc = nn.Sequential(
@@ -88,28 +85,16 @@ class PixelNeuralNet(BaseNeuralNet):
             nn.ReLU(),
             nn.Linear(512, self.output_dim)
         )
-
-        # conv = nn.Sequential(
-        #     nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=3, stride=1),
-        #     nn.ReLU(),
-        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
-        #     nn.ReLU(),
-        # )
-        # conv_out_size = self.get_conv_out_size(self.conv, self.input_dim)
-
-        # fc = nn.Sequential(
-        #     nn.Flatten(),
-        #     nn.Linear(self.conv_out_size, 512),
-        #     nn.ReLU(),
-        #     nn.Linear(512, self.output_dim)
-        # )
         
         return nn.Sequential(conv,fc)
 
-
+    def forward(self, state:np.ndarray) -> torch.Tensor:
+        Q : torch.Tensor = self.network(state)
+        Q = Q.clone().detach().requires_grad_(True)
+        assert Q.requires_grad, 'Q-values must be a torch Tensor with a gradient'
+        return Q
 
 class StateNeuralNet(BaseNeuralNet):
-		
     """
     A deep Neural Network designed with the following layers:
     Linear(self.64, 256),
@@ -129,7 +114,6 @@ class StateNeuralNet(BaseNeuralNet):
         
         https://medium.com/@joachimiak.krzysztof/learning-to-play-pong-with-pytorch-tianshou-a9b8d2f1b8bd
         """
-
         # Followed by Fully Connected Layers
         fc = nn.Sequential(
             nn.Linear(self.height * self.width, 256),
@@ -142,5 +126,10 @@ class StateNeuralNet(BaseNeuralNet):
             nn.ReLU(),
             nn.Linear(128, self.output_dim)
         )
-        
         return fc
+    
+    def forward(self, state:np.ndarray) -> torch.Tensor:
+        Q : torch.Tensor = self.network(state.reshape((-1,64)))
+        Q = Q.clone().detach().requires_grad_(True)
+        assert Q.requires_grad, 'Q-values must be a torch Tensor with a gradient'
+        return Q
