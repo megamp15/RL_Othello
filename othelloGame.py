@@ -52,6 +52,9 @@ class Othello(Environment):
         self.board[half_size[0],half_size[1]-1] = PlayerTurn.Player1.value
         self.activePlayer = PlayerTurn.Player1
     
+    def close(self) -> None:
+        pass
+    
     def displayBoard(self) -> None:
         """
         Displays the game board graphically (will be filled in later if we have time)

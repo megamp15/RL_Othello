@@ -151,3 +151,8 @@ class Othello(Environment):
             retval = retval.squeeze()
 
         return retval
+    
+    def close(self) -> None:
+        if self.record_video:
+            self.env.close_video_recorder()
+        self.env.close()
