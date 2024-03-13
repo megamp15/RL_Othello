@@ -87,7 +87,6 @@ class DDQN(DeepAgent):
             self.sync_w_to_target_net()
         
         super().train(state, action, reward, next_state, next_action, terminate)
-
         state, action, next_reward, next_state, _, terminate = self.memory.recall()
 
         if terminate:

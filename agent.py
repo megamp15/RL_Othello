@@ -93,10 +93,6 @@ class DeepAgent(ABC):
             action = random.choice(available_moves)
         else:
             action = self.get_action_by_policy(state, available_moves)
-            state = np.expand_dims(state, axis=0)
-            state = torch.tensor(state, device=self.network.device, dtype=torch.float32)
-            q_vals_actions = self.network(state)
-            action = self.clamp_illegal_actions(q_vals_actions,available_moves)
 
         self.decay_epsilon()
         # self.step += 1
