@@ -9,8 +9,7 @@ from othelloUtil import MoveMode
 from dqn import DDQN, DQN, DuelDQN
 from sarsa import SARSA, SARSA_DDQN, SARSA_DuelDQN
 
-from train import train_QLearning, train_SARSA
-from test import test_agent
+from train import run_agents
 from environment import Environment
 from agent import DeepAgent, AgentParams
 from neuralNet import StateNeuralNet, PixelNeuralNet
@@ -36,8 +35,8 @@ EPSILON_DECAY_RATE = 0.999975
 EPSILON_MIN = 0.1
 ALPHA = 0.00025
 GAMMA = 0.9
-SKIP_TRAINING = 1
-SAVE_INTERVAL = 10_000
+SKIP_TRAINING = 100
+SAVE_INTERVAL = 100
 SYNC_INTERVAL = 500
 
 # TRAINING PARAMS
@@ -70,7 +69,7 @@ def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
 
 
 if __name__ == '__main__':
-    for env in [setup_gym_env(),setup_pygame_env()]:
+    for env in [setup_pygame_env(),setup_gym_env()]:
         params = {
             'net_type' : StateNeuralNet if isinstance(env,OthelloGame) else PixelNeuralNet,
             'state_shape' : env.state_space,
@@ -110,7 +109,7 @@ if __name__ == '__main__':
         for agent in agents:
             print(f'Agent: {agent.name}')
             logger.save_dir = f'{save_logs_path}_{agent.name}'
-            train_QLearning(env, agent, dummy_agent, 1, max_steps, logger)
-            # test_agent(env, agent)
+            run_agents(env, agent, dummy_agent, EPISODES, max_steps, logger, train=True)
+            run_agents(env, agent, dummy_agent, 1000, max_steps, logger, train=False)
         env.close()
     
