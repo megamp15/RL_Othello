@@ -33,10 +33,8 @@ class DQN(DeepAgent):
         super().train(state, action, reward, next_state, next_action, terminate)
         state, action, next_reward, next_state, _ , terminate = self.memory.recall()
 
-        if terminate:
-            q_target = next_reward
-        else:
-            q_target = next_reward + self.gamma * self.get_Q_value_batch(self.network, next_state)
+        q_target = torch.where(terminate,next_reward,
+                               next_reward + self.gamma * self.get_Q_value_batch(self.network, next_state))
         q_estimate = self.get_Q_value_batch(self.network, state, action)
         # q_est = self.current_q_w_estimate(state, action)
         # q_tgt = self.q_target(reward, next_state, terminate)
@@ -89,10 +87,8 @@ class DDQN(DeepAgent):
         super().train(state, action, reward, next_state, next_action, terminate)
         state, action, next_reward, next_state, _, terminate = self.memory.recall()
 
-        if terminate:
-            q_target = next_reward
-        else:
-            q_target = next_reward + self.gamma * self.get_Q_value_batch(self.evaluation_network, next_state)
+        q_target = torch.where(terminate, next_reward,
+                                next_reward + self.gamma * self.get_Q_value_batch(self.evaluation_network, next_state))
         q_estimate = self.get_Q_value_batch(self.evaluation_network, state, action)
         loss = self.update_network(q_estimate, q_target)
         
