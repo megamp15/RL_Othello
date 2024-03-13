@@ -8,17 +8,14 @@ import os
 
 class MetricLogger:
     def __init__(self, save_dir:str, window_size:int):
-        self.save_log = save_dir + "/log.csv"
+        self.save_dir = save_dir
+        self.log_file = 'log.csv'
 
-        os.makedirs(save_dir)
-        with open(self.save_log, "w") as f:
-            f.write(
-                '#Episode,Step,Epsilon,MeanReward,MeanLength,MeanLoss,MeanQValue,TimeDelta,Time\n'
-            )
-        self.ep_rewards_plot = save_dir + "/reward_plot.jpg"
-        self.ep_lengths_plot = save_dir + "/length_plot.jpg"
-        self.ep_avg_losses_plot = save_dir + "/loss_plot.jpg"
-        self.ep_avg_qs_plot = save_dir + "/q_plot.jpg"
+
+        # self.ep_rewards_plot = save_dir + "/reward_plot.jpg"
+        # self.ep_lengths_plot = save_dir + "/length_plot.jpg"
+        # self.ep_avg_losses_plot = save_dir + "/loss_plot.jpg"
+        # self.ep_avg_qs_plot = save_dir + "/q_plot.jpg"
 
         # History metrics
         self.ep_rewards = []
@@ -71,7 +68,9 @@ class MetricLogger:
         self.curr_ep_q = 0.0
         self.curr_ep_loss_length = 0
 
-    def record(self, episode:int, epsilon:float, step:int, window:int=None) -> None:
+    def record(self, episode:int, epsilon:float, step:int, save_dir:str=None, window:int=None) -> None:
+        if save_dir == None:
+            save_dir = self.save_dir
         if window == None:
             window = self.window_size
         mean_ep_reward = np.round(np.mean(self.ep_rewards[-window:]), 3)
@@ -99,23 +98,29 @@ class MetricLogger:
         #     f"Time Delta {time_since_last_record} - "
         #     f"Time {datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}"
         # )
-
-        with open(self.save_log, "a") as f:
+        os.makedirs(save_dir)
+        with open(f'{self.save_dir}/{self.log_file}', "a") as f:
             f.write(
+                '#Episode,Step,Epsilon,MeanReward,MeanLength,MeanLoss,MeanQValue,TimeDelta,Time\n'
                 f"{episode},{step},{epsilon},"
                 f"{mean_ep_reward},{mean_ep_length},{mean_ep_loss},{mean_ep_q},"
                 f"{time_since_last_record},"
                 f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}\n"
             )
 
-        for metric in ["ep_lengths", "ep_avg_losses", "ep_avg_qs", "ep_rewards"]:
+        metrics = {
+            'ep_lengths' : self.moving_avg_ep_lengths,
+            'ep_avg_losses' : self.moving_avg_ep_avg_losses,
+            'ep_avg_qs' : self.moving_avg_ep_avg_qs,
+            'ep_rewards' : self.moving_avg_ep_rewards}
+        for metric_name, metric in metrics.items():
             plt.clf()
-            plt.plot(getattr(self, f"moving_avg_{metric}"), label=f"moving_avg_{metric}")
+            plt.plot(metric, label=metric_name)
             plt.xlabel('Episode')
-            plt.ylabel(metric)
-            plt.title(f'{metric.capitalize()} over Episodes')
+            plt.ylabel(metric_name)
+            plt.title(f'{metric_name.capitalize()} over Episodes')
             plt.legend()
-            plt.savefig(getattr(self, f"{metric}_plot"))
+            plt.savefig(f'{self.save_dir}/{metric_name}_plot.png')
 
     def record_hyperparams(self, hyperparams:AgentParams):
         del hyperparams['state_shape']
@@ -123,7 +128,7 @@ class MetricLogger:
         hyperparams_str = '\n'.join([f"{key}: {value}" for key, value in hyperparams.items()])
         print("\nHyperparameters:")
         print(hyperparams_str)
-        with open(self.save_log, "a") as f:
+        with open(self.log_file, "a") as f:
             f.write(
                 f"\nHyperparameters:\n{hyperparams_str}\n"
             )

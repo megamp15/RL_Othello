@@ -110,6 +110,7 @@ if __name__ == '__main__':
         print(f'Environment : {env.name}')
         for agent in agents:
             print(f'Agent: {agent.agent_type.value}')
+            logger.save_dir = f'{save_logs_path}_{agent.agent_type.value}'
             train_QLearning(env, agent, dummy_agent, 1, max_steps, logger)
             # test_agent(env, agent)
     
