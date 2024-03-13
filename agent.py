@@ -65,7 +65,12 @@ class DeepAgent(ABC):
         self.skip_training = kwargs['skip_training'] # Skip the first n amount of training steps to cache experience in memory
         self.save_interval = kwargs['save_interval'] # Save the model every n steps
 
-        self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'], amsgrad=True)
+        self.optimizer_params = {
+            'params' : self.network.parameters(),
+            'lr' : kwargs['alpha'],
+            'amsgrad' : True
+        }
+        self.optimizer = optim.AdamW(**self.optimizer_params)
         self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
@@ -76,11 +81,15 @@ class DeepAgent(ABC):
     def decay_epsilon(self) -> None:
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
 
-    def get_action_by_policy_(self, state:np.ndarray, available_moves:list[int], network:BaseNeuralNet) -> int:
+    def get_qvalue_by_policy_(self, state:np.ndarray, network:BaseNeuralNet) -> torch.Tensor:
         state = np.expand_dims(state, axis=0)
         state_t = torch.tensor(state, device=network.device, dtype=torch.float32)
         q_vals_actions = network(state_t)
-        return self.clamp_illegal_actions(q_vals_actions,available_moves)
+        return q_vals_actions
+    
+    def get_action_by_policy_(self, state:np.ndarray, available_moves:list[int], network:BaseNeuralNet) -> int:
+        q_vals_actions = self.get_qvalue_by_policy_(state, network)
+        return self.get_highest_legal_qvalue_action(q_vals_actions, available_moves)
     
     def get_action_by_policy(self, state:np.ndarray, available_moves:list[int]) -> int:
         return self.get_action_by_policy_(state, available_moves, self.network)
@@ -99,7 +108,8 @@ class DeepAgent(ABC):
 
         return action
     
-    def clamp_illegal_actions(self,q_vals_actions:torch.Tensor,available_moves:list)->int|None:
+    # Formerly clamp_illegal_actions
+    def get_highest_legal_qvalue_action(self,q_vals_actions:torch.Tensor,available_moves:list)->int|None:
         if len(available_moves) == 0:
             return None
         q_vals = q_vals_actions.tolist()[0]
@@ -141,11 +151,16 @@ class DeepAgent(ABC):
             self.save_model()
         self.step += 1
 
-    def update_network(self, q_w_estimate:torch.Tensor, q_target:torch.Tensor) -> float:
+    def update_network(self, q_w_estimate:torch.Tensor, q_target:torch.Tensor, network:BaseNeuralNet=None) -> float:
+        if network == None:
+            network = self.network
+        optim_params = self.optimizer_params
+        optim_params['params'] = network.parameters()
+        optimizer = optim.AdamW(**optim_params)
         loss : torch.Tensor = self.loss_func(q_w_estimate, q_target)
-        self.optimizer.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        optimizer.step()
         return loss.item()
 
     def save_model(self, save_path:str=None) -> None:

@@ -104,7 +104,7 @@ if __name__ == '__main__':
             }
         agents = setup_agents(**params)
         dummy_agent = DQN(**dummy_params)
-        train_QLearning(env, agents[1], dummy_agent, EPISODES, MAX_STEPS, logger)
+        train_QLearning(env, agents[2], dummy_agent, EPISODES, MAX_STEPS, logger)
         # for agent in agents:
         #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
             # test_agent(env, agent)

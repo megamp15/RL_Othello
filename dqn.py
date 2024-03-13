@@ -31,7 +31,7 @@ class DQN(DeepAgent):
         Model learning/optimization
         """        
         super().train(state, action, reward, next_state, next_action, terminate)
-        state, action, next_reward, next_state, _ , terminate = self.memory.recall()
+        state, action, next_reward, next_state, _, terminate = self.memory.recall()
 
         q_target = torch.where(terminate,next_reward,
                                next_reward + self.gamma * self.get_Q_value_batch(self.network, next_state))
@@ -90,7 +90,8 @@ class DDQN(DeepAgent):
         q_target = torch.where(terminate, next_reward,
                                 next_reward + self.gamma * self.get_Q_value_batch(self.evaluation_network, next_state))
         q_estimate = self.get_Q_value_batch(self.evaluation_network, state, action)
-        loss = self.update_network(q_estimate, q_target)
+        loss = self.update_network(q_estimate, q_target, self.evaluation_network)
+        _ = self.update_network(q_estimate, q_target, self.selection_network)
         
         return (q_estimate.mean().item(), loss)
 
@@ -121,9 +122,16 @@ class DuelDQN(DeepAgent):
         Model learning/optimization
         """
         super().train(state, action, reward, next_state, next_action, terminate)
-        state, action, reward, next_state, _ , terminate  = self.memory.recall()
-        q_est = self.current_q_w_estimate(state, action)
-        q_tgt = self.q_target(reward, next_state, terminate)
-        loss = self.update_network(q_est, q_tgt)
+        state, action, next_reward, next_state, _, terminate  = self.memory.recall()
+
+        values = self.get_qvalue_by_policy_(state, self.value_net)
+        advantages = self.get_qvalue_by_policy_(state, self.advantage_net)
+        mean_advantages = advantages.mean(dim=1)
+
+        q_estimate = values + (advantages[:,action] - mean_advantages)
+        q_target = torch.where(terminate, next_reward,
+                                next_reward + self.gamma * self.get_Q_value_batch(self.advantage_net, next_state))
+        loss = self.update_network(q_estimate, q_target, self.advantage_net)
+        _ = self.update_network(q_estimate, q_target, self.value_net)
         
-        return (q_est.mean().item(), loss)
+        return (q_estimate.mean().item(), loss)
