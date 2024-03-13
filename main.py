@@ -42,7 +42,8 @@ SYNC_INTERVAL = 500
 
 # TRAINING PARAMS
 EPISODES = 3_000
-MAX_STEPS = 60
+MAX_STEPS_PYGAME = 30
+MAX_STEPS_GYM = 1000
 
 MEMORY_CAPACITY = 100_000
 BATCH_SIZE = 64
@@ -71,7 +72,7 @@ def setup_agents(**kwargs:Unpack[AgentParams]) -> list[DeepAgent]:
 if __name__ == '__main__':
     for env in [setup_pygame_env()]:
         params = {
-            'net_type' : PixelNeuralNet,
+            'net_type' : StateNeuralNet if isinstance(env,OthelloGame) else PixelNeuralNet,
             'state_shape' : env.state_space,
             'num_actions' : env.num_actions,
             'epsilon' : EPSILON,
@@ -87,7 +88,7 @@ if __name__ == '__main__':
             'batch_size' : BATCH_SIZE
             }
         dummy_params = {
-            'net_type' : PixelNeuralNet,
+            'net_type' : StateNeuralNet if isinstance(env,OthelloGame) else PixelNeuralNet,
             'state_shape' : env.state_space,
             'num_actions' : env.num_actions,
             'epsilon' : 1,
@@ -104,7 +105,8 @@ if __name__ == '__main__':
             }
         agents = setup_agents(**params)
         dummy_agent = DQN(**dummy_params)
-        train_QLearning(env, agents[0], dummy_agent, EPISODES, MAX_STEPS, logger)
+        max_steps = MAX_STEPS_PYGAME if isinstance(env,OthelloGame) else MAX_STEPS_GYM
+        train_QLearning(env, agents[0], dummy_agent, EPISODES, max_steps, logger)
         # for agent in agents:
         #     train_QLearning(env, agent, EPISODES, MAX_STEPS, logger)
             # test_agent(env, agent)
