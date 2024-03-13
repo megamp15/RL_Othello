@@ -100,6 +100,8 @@ def train_SARSA(environment:Environment, agent:DeepAgent, dummy_agent:DeepAgent,
             action = next_action
 
             cumulative_reward += reward
+        agent.reset()
+
         rewards.append(cumulative_reward)
         loss_record.append(loss)
         q_record.append(q)
