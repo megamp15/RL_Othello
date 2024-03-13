@@ -15,12 +15,14 @@ from othelloUtil import *
 
 
 class AgentType(Enum):
-    DQN = "DQN"
-    DDQN = "DDQN"
-    DUELDQN = "DUELDQN"
-    SARSA = "SARSA"
-    DSARSA = "DSARSA"
-    DUELSARSA = "DUELSARSA"
+    Q_LEARNING = 0
+    SARSA = 1
+    # DQN = "DQN"
+    # DDQN = "DDQN"
+    # DUELDQN = "DUELDQN"
+    # SARSA = "SARSA"
+    # DSARSA = "DSARSA"
+    # DUELSARSA = "DUELSARSA"
 
 class AgentParams(TypedDict):
     net_type : type[BaseNeuralNet]
@@ -39,6 +41,8 @@ class AgentParams(TypedDict):
     batch_size : int
 
 class DeepAgent(ABC):
+    name = 'DeepAgent'
+
     def __init__(self, agent_type:AgentType, net_type:BaseNeuralNet, loss_func=nn.MSELoss, **kwargs : Unpack[AgentParams]) -> None:
         # The Neural Networks for The main Q network and the target network
         self.net_type = net_type
@@ -55,6 +59,7 @@ class DeepAgent(ABC):
 
         # Current Step of the agent
         self.step = 0
+        self.episode = 0
 
         # Hyperparameters
         self.epsilon = kwargs['epsilon']
@@ -69,9 +74,14 @@ class DeepAgent(ABC):
         self.loss_func = loss_func()
         self.sync_interval = kwargs['sync_interval']
         self.agent_type = agent_type
-        
-    def set_state_shape(self,state_shape):
-        self.state_shape= state_shape
+
+    def reset(self) -> None:
+        """
+        Gets called when the agent finishs an episode/game
+        """
+        if self.episode % self.save_interval == 0: # Save every n eps
+            self.save_model()
+        self.episode += 1
     
     def decay_epsilon(self) -> None:
         self.epsilon = max(self.epsilon * self.epsilon_decay_rate, self.epsilon_min)
@@ -112,8 +122,8 @@ class DeepAgent(ABC):
     
     @abstractmethod
     def train(self, state, action, reward, next_state, next_action, terminate) -> tuple:
-        # action_idx = getIndexFromCoords(action)
-        # next_action_idx = getIndexFromCoords(next_action)
+        if self.step < self.skip_training:
+            return None, None
         self.memory.cache(state, action, reward, next_state, next_action, terminate)
     
     def current_q_w_estimate(self, state:np.ndarray, action:torch.Tensor) -> float:

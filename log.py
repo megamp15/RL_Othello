@@ -98,7 +98,7 @@ class MetricLogger:
         #     f"Time Delta {time_since_last_record} - "
         #     f"Time {datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}"
         # )
-        os.makedirs(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
         with open(f'{self.save_dir}/{self.log_file}', "a") as f:
             f.write(
                 '#Episode,Step,Epsilon,MeanReward,MeanLength,MeanLoss,MeanQValue,TimeDelta,Time\n'
