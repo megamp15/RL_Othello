@@ -62,11 +62,6 @@ class PixelNeuralNet(BaseNeuralNet):
     """
     
     def construct_network(self) -> nn.Sequential:
-        """
-        Just to test for right now, the following network is from 
-        
-        https://medium.com/@joachimiak.krzysztof/learning-to-play-pong-with-pytorch-tianshou-a9b8d2f1b8bd
-        """
         # Convolutional Layers
         conv = nn.Sequential(
             nn.Conv2d(in_channels=self.channel, out_channels=32, kernel_size=8, stride=4),
@@ -109,11 +104,6 @@ class StateNeuralNet(BaseNeuralNet):
     """
     
     def construct_network(self) -> nn.Sequential:
-        """
-        Just to test for right now, the following network is from 
-        
-        https://medium.com/@joachimiak.krzysztof/learning-to-play-pong-with-pytorch-tianshou-a9b8d2f1b8bd
-        """
         # Followed by Fully Connected Layers
         fc = nn.Sequential(
             nn.Linear(self.height * self.width, 256),

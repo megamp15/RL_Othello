@@ -68,7 +68,7 @@ class DeepAgent(ABC):
         self.gamma = kwargs['gamma']
         
         self.skip_training = kwargs['skip_training'] # Skip the first n amount of training steps to cache experience in memory
-        self.save_interval = kwargs['save_interval'] # Save the model every n steps
+        self.save_interval = kwargs['save_interval'] # Save the model every n episodes
 
         self.optimizer = optim.AdamW(self.network.parameters(), lr=kwargs['alpha'], amsgrad=True)
         self.loss_func = loss_func()
