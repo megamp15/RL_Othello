@@ -43,9 +43,6 @@ class SARSA_DDQN(DeepAgent):
         self.target_net = self.net_type(kwargs['state_shape'], kwargs['num_actions'])
         # Copy inital weights from Q Network into the target network
         self.target_net.load_state_dict(self.network.state_dict())
-        # # Q_target parameters are frozen.
-        # for p in self.target_net.parameters():
-        #     p.requires_grad = False
         
     @torch.no_grad() # No Backwards computations needed
     def q_target(self, reward:torch.Tensor, next_state:torch.Tensor, next_action:torch.Tensor, terminate:torch.Tensor) -> float:
